@@ -1,0 +1,35 @@
+{
+  "name": "audiovisual",
+  "version": "1.0.0",
+  "description": "The key to unlock all streams.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "author": "The Void",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1",
+    "electron-reloader": "^1.2.3"
+  },
+  "dependencies": {
+    "axios": "^1.4.0"
+  },
+  "build": {
+    "appId": "com.void.player",
+    "productName": "AudioVisual",
+    "win": {
+      "target": "nsis",
+      "icon": "icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "electronDownload": {
+      "mirror": "https://npm.taobao.org/mirrors/electron/"
+    }
+  }
+}

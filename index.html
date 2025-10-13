@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>AudioVisual</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <h1 class="logo">AudioVisual</h1>
+            <div class="controls-wrapper">
+               <div class="control-group">
+                   <label for="platform-select">平台导航:</label>
+                   <select id="platform-select"></select>
+                </div>
+                <div class="control-group">
+                    <label for="api-select">解析接口:</label>
+                    <select id="api-select"></select>
+               </div>
+               <button id="parse-button" class="action-button">P A R S E !</button>
+           </div>
+
+            <div class="usage-tips">
+               <h4>使用提示</h4>
+               <ul>
+                   <li><strong>解析失败:</strong> 请尝试更换上方的解析接口，或检查视频链接是否正确。</li>
+                   <li><strong>广告:</strong> 部分解析接口可能会有广告，请耐心等待或更换接口。</li>
+                   <li><strong>安全:</strong> 请勿在视频播放页面输入任何个人敏感信息。</li>
+               </ul>
+            </div>
+            <div class="footer">Reality is a suggestion.</div>
+        </aside>
+        
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="browser-controls">
+                    <button id="back-button" class="nav-button" disabled title="后退">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    </button>
+                    <button id="forward-button" class="nav-button" disabled title="前进">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </button>
+                    <button id="home-button" class="nav-button" title="首页">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12.5l9-9 9 9"></path><path d="M4.5 10.5v9a2 2 0 002 2h11a2 2 0 002-2v-9"></path></svg>
+                    </button>
+                </div>
+                <input type="text" id="url-input" placeholder="将视频链接粘贴于此...">
+                <button id="go-button">Go</button>
+                <div class="window-controls">
+                    <button id="minimize-button" class="window-control-button" title="最小化">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
+                    <button id="maximize-button" class="window-control-button" title="最大化">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                    </button>
+                    <button id="close-button" class="window-control-button" title="关闭">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="youku-custom-page" style="display: none;">
+                <div class="icon-container">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path>
+                    </svg>
+                </div>
+                <h2>优酷视频解析</h2>
+                <p>由于优酷的限制，请在此处直接粘贴视频链接进行解析播放。</p>
+                <input type="text" id="youku-url-input" placeholder="请在此输入优酷视频链接...">
+                <div class="usage-tips">
+                    <h4>使用说明</h4>
+                    <ul>
+                        <li>1. 在上方输入框中粘贴优酷视频的链接。</li>
+                        <li>2. 在左侧选择一个解析接口。</li>
+                        <li>3. 点击上方的 "P A R S E !" 按钮开始播放。</li>
+                        <li>4. 如需更换接口，在左侧重新选择后再次点击 "P A R S E !" 即可。</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="./renderer.js"></script>
+</body>
+</html>
