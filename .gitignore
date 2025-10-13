@@ -79,3 +79,6 @@ typings/
 
 # User data
 /userData
+# Build output
+/dist
+package-lock.json
