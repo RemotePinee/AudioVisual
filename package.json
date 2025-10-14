@@ -20,10 +20,16 @@
   "build": {
     "appId": "com.void.player",
     "productName": "AudioVisual",
+    "files": [
+      "main.js",
+      "index.html",
+      "assets/**/*"
+    ],
     "win": {
       "target": "nsis",
       "icon": "assets/images/icon.png"
     },
+    "compression": "maximum",
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
