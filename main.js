@@ -137,8 +137,18 @@ function createWindow () {
       // 1. Push styles to preload script for injection
       const combinedCss = currentThemeCss + '\n' + scrollbarCss;
       view.webContents.send('update-styles', combinedCss);
+    }
+  });
 
-      // 2. Show the view now that the DOM is ready
+  // --- New Event Listener for Instant Feedback ---
+  view.webContents.on('did-start-navigation', (event, url, isInPlace, isMainFrame) => {
+    if (isMainFrame) {
+      // 1. Update URL in the address bar immediately
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('url-updated', url);
+      }
+
+      // 2. Ensure the view is visible and has correct bounds
       isViewVisible = true;
       updateViewBounds();
 
