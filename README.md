@@ -40,4 +40,4 @@ npm start
 
 如果这个项目对你有帮助，可以请我喝杯咖啡！
 
-<img src="assets/zf.jpg" alt="赞赏码" width="300"/>
+<img src="/assets/images/zf.jpg" alt="赞赏码" width="300"/>
