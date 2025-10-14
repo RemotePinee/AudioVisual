@@ -1,0 +1,131 @@
+@font-face {
+    font-family: 'HarmonyOS Sans SC';
+    src: url('../fonts/HarmonyOS_SansSC_Medium.ttf') format('truetype');
+}
+
+:root {
+    --primary-bg: #000000; /* Black background */
+    --secondary-bg: #1a1a1a;
+    --sidebar-bg: #101010;
+    --accent-color: #333333;
+    --highlight-color: #C0FAA0; /* New accent color */
+    --text-color: #dcdce4;
+    --text-secondary-color: #a0a0b8;
+    --font-family: 'HarmonyOS Sans SC', sans-serif;
+    --border-radius: 8px;
+}
+
+/* Hide original controls and tips in drama mode */
+.drama-mode .controls-wrapper,
+.drama-mode .usage-tips {
+    display: none;
+}
+
+/* Show new controls in drama mode */
+.drama-controls {
+    display: none; /* Hidden by default */
+}
+
+.drama-mode .drama-controls {
+    display: block; /* Shown in drama mode */
+    -webkit-app-region: no-drag;
+}
+
+.drama-mode .logo {
+    color: var(--highlight-color);
+}
+
+.drama-mode .action-button {
+    background: var(--highlight-color);
+    color: #000; /* Black text for better contrast */
+}
+
+.drama-mode .action-button:hover {
+    background: #a9e08a;
+    box-shadow: 0 0 15px rgba(192, 250, 160, 0.4);
+}
+
+.drama-mode #go-button:hover {
+    background: var(--highlight-color);
+    color: #000;
+}
+
+.drama-mode .nav-button:hover {
+    color: var(--highlight-color);
+}
+
+.drama-mode .window-control-button#close-button:hover {
+    background: var(--highlight-color);
+    color: #000;
+}
+
+.drama-mode #youku-custom-page .icon-container {
+    color: var(--highlight-color);
+    filter: drop-shadow(0 0 15px var(--highlight-color));
+}
+
+.drama-mode #youku-custom-page input[type="text"]:focus {
+    border-color: var(--highlight-color);
+    box-shadow: 0 0 20px rgba(192, 250, 160, 0.4), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.drama-mode #youku-custom-page .usage-tips li::before {
+    color: var(--highlight-color);
+}
+
+/* Transition effect */
+.container {
+    transition: background-color 0.5s ease;
+}
+
+.sidebar, .top-bar, .main-content {
+    transition: background-color 0.5s ease;
+}
+
+.logo, .action-button, .nav-button, .window-control-button, ::-webkit-scrollbar-thumb {
+    transition: all 0.3s ease;
+}
+
+
+
+.drama-mode .footer a:hover {
+    color: var(--highlight-color);
+}
+
+/* --- Drama Mode Usage Tips --- */
+.drama-usage-tips {
+    margin-top: 25px;
+    padding: 15px;
+    background-color: var(--accent-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.drama-usage-tips h4 {
+   color: var(--highlight-color);
+   font-size: 16px;
+   margin-bottom: 15px;
+   text-align: center;
+}
+
+.drama-usage-tips ul {
+   list-style: none;
+   padding-left: 0;
+}
+
+.drama-usage-tips li {
+   font-size: 14px;
+   color: var(--text-secondary-color);
+   margin-bottom: 12px;
+   line-height: 1.6;
+}
+
+.drama-usage-tips a {
+    color: var(--highlight-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.drama-usage-tips a:hover {
+    text-decoration: underline;
+}

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>AudioVisual</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" id="drama-theme" href="assets/css/drama-style.css" disabled>
 </head>
 <body>
     <div class="container">
@@ -19,8 +20,32 @@
                     <select id="api-select"></select>
                </div>
                <button id="parse-button" class="action-button">P A R S E !</button>
-           </div>
+            </div>
+            <div class="control-group no-drag" style="margin-top: 25px;">
+                <button id="drama-mode-button" class="action-button">美韩日剧</button>
+            </div>
+            <div class="drama-controls no-drag">
+                <div class="control-group">
+                    <button id="netflix-factory-button" class="action-button">奈飞工厂</button>
+                </div>
+                <div class="control-group">
+                    <button id="7-movie-button" class="action-button">7点电影</button>
+                </div>
+                <div class="control-group">
+                    <button id="kanpian-button" class="action-button">看片狂人</button>
+                </div>
+                <div class="control-group">
+                    <button id="gazf-button" class="action-button">GAZF</button>
+                </div>
+            </div>
 
+            <div class="drama-usage-tips no-drag">
+               <h4>使用提示</h4>
+               <ul>
+                   <li>网站均来源于互联网，站内广告自行斟酌。</li>
+                   <li>如有需求请联系邮箱：<a href="mailto:fenghaoran60@gmail.com">fenghaoran60@gmail.com</a></li>
+               </ul>
+            </div>
             <div class="usage-tips">
                <h4>使用提示</h4>
                <ul>
@@ -29,7 +54,9 @@
                    <li><strong>安全:</strong> 请勿在视频播放页面输入任何个人敏感信息。</li>
                </ul>
             </div>
-            <div class="footer">Reality is a suggestion.</div>
+            <div class="footer">
+    <a href="https://github.com/RemotePinee/AudioVisual" target="_blank">GitHub Repository</a>
+</div>
         </aside>
         
         <main class="main-content">
@@ -81,6 +108,9 @@
             </div>
         </main>
     </div>
-    <script src="./renderer.js"></script>
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner"></div>
+    </div>
+    <script src="./assets/js/renderer.js"></script>
 </body>
 </html>

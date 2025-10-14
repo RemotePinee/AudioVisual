@@ -1,6 +1,7 @@
 // main.js
 
-const { app, BrowserWindow, BrowserView, ipcMain, session } = require('electron');
+const { app, BrowserWindow, BrowserView, ipcMain, session, shell } = require('electron');
+
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -93,26 +94,25 @@ if (widevineInfo) {
 let mainWindow;
 let view;
 let isViewVisible = true; 
+// --- Theme Management ---
+let currentThemeCss = `:root { --primary-bg: #1e1e2f; --accent-color: #3a3d5b; --highlight-color: #ff6768; }`;
 
 // Preload the custom scrollbar CSS
-const scrollbarCss = fs.readFileSync(path.join(__dirname, 'view-style.css'), 'utf8');
+const scrollbarCss = fs.readFileSync(path.join(__dirname, 'assets', 'css', 'view-style.css'), 'utf8');
 
 function createWindow () {
-  // Provide the preloaded CSS to the renderer process when requested
-  ipcMain.handle('get-scrollbar-css', () => scrollbarCss);
-
   mainWindow = new BrowserWindow({
     width: 1280,
-    height: 720,
+    height: 800,
     frame: false,
     titleBarStyle: 'hidden',
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      preload: path.join(__dirname, 'preload-ui.js')
+      preload: path.join(__dirname, 'assets', 'js', 'preload-ui.js')
     },
     title: "AudioVisual",
-    icon: path.join(__dirname, 'icon.png')
+    icon: path.join(__dirname, 'assets', 'images', 'icon.png')
   });
 
   mainWindow.loadFile('index.html');
@@ -126,8 +126,26 @@ function createWindow () {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      preload: path.join(__dirname, 'preload-web.js'),
+      preload: path.join(__dirname, 'assets', 'js', 'preload-web.js'),
       plugins: true
+    }
+  });
+
+  // Push styles and show the view as soon as the DOM is ready for maximum speed
+  view.webContents.on('dom-ready', () => {
+    if (view && view.webContents) {
+      // 1. Push styles to preload script for injection
+      const combinedCss = currentThemeCss + '\n' + scrollbarCss;
+      view.webContents.send('update-styles', combinedCss);
+
+      // 2. Show the view now that the DOM is ready
+      isViewVisible = true;
+      updateViewBounds();
+
+      // 3. Notify the renderer to hide the loading overlay
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('load-finished');
+      }
     }
   });
 
@@ -157,16 +175,23 @@ function createWindow () {
   });
 
    // --- 神聆听祈祷，并下达指令 ---
-   ipcMain.on('navigate', async (event, { url, isPlatformSwitch }) => {
+   ipcMain.on('navigate', async (event, { url, isPlatformSwitch, themeVars }) => {
     if (view && view.webContents) {
-      if (isPlatformSwitch) {
-        await view.webContents.session.clearStorageData({
-          storages: ['cookies']
-        });
-      }
-      view.webContents.loadURL(url);
+        if (isPlatformSwitch) {
+            await view.webContents.session.clearStorageData({
+                storages: ['cookies']
+            });
+        }
+        
+        if (themeVars) {
+            // Update the current theme CSS string. It will be pushed on 'dom-ready'.
+            currentThemeCss = `:root { ${Object.entries(themeVars).map(([key, value]) => `${key}: ${value}`).join('; ')} }`;
+        }
+        
+        // Navigate to the new URL (happens in the background if the view was hidden by the renderer)
+        view.webContents.loadURL(url);
     }
-  });
+});
 
   ipcMain.handle('get-current-url', () => {
     return view ? view.webContents.getURL() : '';
@@ -339,10 +364,17 @@ function createWindow () {
 app.whenReady().then(async () => {
   // Clear session data and cache on startup to fix SSL/Cache issues
   await session.defaultSession.clearStorageData();
+  // Set a common user-agent to bypass bot detection
+  session.defaultSession.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36');
   await session.defaultSession.clearCache();
   createWindow();
 });
 
 // App Lifecycle
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
-app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+
+// --- External Link Handling ---
+ipcMain.on('open-external-link', (event, url) => {
+  shell.openExternal(url);
+});
