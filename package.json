@@ -22,7 +22,7 @@
     "productName": "AudioVisual",
     "win": {
       "target": "nsis",
-      "icon": "icon.png"
+      "icon": "assets/images/icon.png"
     },
     "nsis": {
       "oneClick": false,
