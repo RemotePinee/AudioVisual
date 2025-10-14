@@ -74,6 +74,7 @@ function parseYoukuUrl() {
 
         urlInput.value = currentYoukuUrl;
         loadingOverlay.classList.remove('hidden');
+        window.voidAPI.setViewVisibility(true);
         window.voidAPI.navigate(finalUrl, false);
 
         youkuCustomPage.style.display = 'none';
@@ -112,6 +113,7 @@ goButton.addEventListener('click', () => {
         if (!url.startsWith('http')) url = 'https' + '://' + url;
         currentVideoUrl = url;
         loadingOverlay.classList.remove('hidden');
+        window.voidAPI.setViewVisibility(true);
         window.voidAPI.navigate(url, false);
     }
 });
@@ -149,6 +151,7 @@ homeButton.addEventListener('click', () => {
             const currentUrl = new URL(urlInput.value);
             const rootUrl = `${currentUrl.protocol}//${currentUrl.hostname}`;
             loadingOverlay.classList.remove('hidden');
+            window.voidAPI.setViewVisibility(true);
             window.voidAPI.navigate(rootUrl, false);
         } catch (error) {
             // If the URL is invalid, do nothing or provide feedback
@@ -163,6 +166,7 @@ homeButton.addEventListener('click', () => {
             urlInput.value = '';
         } else {
             loadingOverlay.classList.remove('hidden');
+            window.voidAPI.setViewVisibility(true);
             window.voidAPI.navigate(homeUrl, true);
         }
     }
@@ -173,22 +177,14 @@ maximizeButton.addEventListener('click', () => window.voidAPI.maximizeWindow());
 closeButton.addEventListener('click', () => window.voidAPI.closeWindow());
 
 window.voidAPI.onUrlUpdate((url) => {
-    // The main process now controls visibility on theme-switches, so this is removed.
-    if (isYoukuParsing) {
-        urlInput.value = currentYoukuUrl;
-        return;
-    }
-
     const isApiUrl = apiList.some(api => url.startsWith(api.value));
     if (isApiUrl) {
+        // If it's a parsing API URL, display the original video URL.
         urlInput.value = currentVideoUrl;
     } else {
-        const oldVideoUrl = currentVideoUrl;
+        // Otherwise, display the new URL from the main process.
         urlInput.value = url;
         currentVideoUrl = url;
-        if (isCurrentlyParsing && oldVideoUrl !== currentVideoUrl) {
-            triggerParse();
-        }
     }
 });
 
@@ -205,7 +201,7 @@ window.voidAPI.onLoadFinished(() => {
 function initialize() {
     if (platforms.length > 0) {
         loadingOverlay.classList.remove('hidden');
-        window.voidAPI.navigate(platforms[0].value, true);
+        window.voidAPI.navigate(platforms.value, true);
     }
 }
 initialize();
@@ -316,6 +312,7 @@ dramaModeButton.addEventListener('click', (event) => {
 
 netflixFactoryButton.addEventListener('click', () => {
     loadingOverlay.classList.remove('hidden');
+    window.voidAPI.setViewVisibility(true);
     window.voidAPI.navigate('https://www.netflixgc.com/', false);
 });
 
@@ -337,15 +334,18 @@ const gazfButton = document.getElementById('gazf-button');
 
 sevenMovieButton.addEventListener('click', () => {
     loadingOverlay.classList.remove('hidden');
+    window.voidAPI.setViewVisibility(true);
     window.voidAPI.navigate('https://www.7.movie/', false);
 });
 
 kanpianButton.addEventListener('click', () => {
     loadingOverlay.classList.remove('hidden');
+    window.voidAPI.setViewVisibility(true);
     window.voidAPI.navigate('https://kunzejiaoyu.net/', false);
 });
 
 gazfButton.addEventListener('click', () => {
     loadingOverlay.classList.remove('hidden');
+    window.voidAPI.setViewVisibility(true);
     window.voidAPI.navigate('https://gaze.run/', false);
 });
