@@ -1,6 +1,6 @@
 {
   "name": "audiovisual",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The key to unlock all streams.",
   "main": "main.js",
   "scripts": {
