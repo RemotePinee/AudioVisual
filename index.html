@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>AudioVisual</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/toastify.min.css">
     <link rel="stylesheet" id="drama-theme" href="assets/css/drama-style.css" disabled>
 </head>
 <body>
@@ -55,8 +56,13 @@
                </ul>
             </div>
             <div class="footer">
-    <a href="https://github.com/RemotePinee/AudioVisual" target="_blank">GitHub Repository</a>
-</div>
+                <div id="update-notification-area" style="margin-bottom: 10px; min-height: 20px;"></div>
+                <div id="update-toast-container" style="margin-bottom: 10px;">
+                    <button id="check-update-button" class="action-button">检查更新</button>
+                </div>
+                <a href="https://github.com/RemotePinee/AudioVisual" target="_blank">GitHub Repository</a>
+                <div id="toast-container"></div>
+            </div>
         </aside>
         
         <main class="main-content">
@@ -111,6 +117,7 @@
     <div id="loading-overlay" class="hidden">
         <div class="spinner"></div>
     </div>
+    <script src="./assets/js/toastify.min.js"></script>
     <script src="./assets/js/renderer.js"></script>
 </body>
 </html>

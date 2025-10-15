@@ -92,6 +92,7 @@ platformSelect.addEventListener('change', (event) => {
     if (selectedPlatform === 'https://www.youku.com') {
         youkuCustomPage.style.display = 'flex';
         urlInput.value = '';
+        window.voidAPI.setViewVisibility(false);
     } else {
         youkuCustomPage.style.display = 'none';
         navigateTo(selectedPlatform, true);
@@ -143,6 +144,7 @@ homeButton.addEventListener('click', () => {
         const homeUrl = platformSelect.value;
         if (homeUrl === 'https://www.youku.com') {
             youkuCustomPage.style.display = 'flex';
+            window.voidAPI.setViewVisibility(false);
             urlInput.value = '';
         } else {
             navigateTo(homeUrl, true);
@@ -225,6 +227,7 @@ function navigateForTheme(isSwitchingToDrama) {
     };
     const url = isSwitchingToDrama ? 'https://www.netflixgc.com/' : platformSelect.value;
     
+        window.voidAPI.setViewVisibility(false);
     if (url === 'https://www.youku.com' && !isSwitchingToDrama) {
         youkuCustomPage.style.display = 'flex';
     } else {
@@ -267,4 +270,71 @@ document.addEventListener('DOMContentLoaded', () => {
             window.voidAPI.openExternalLink(event.currentTarget.href);
         });
     }
+
+    const checkUpdateButton = document.getElementById('check-update-button');
+    const updateNotificationArea = document.getElementById('update-notification-area');
+    let currentNotificationTimeout = null;
+    
+    function showUpdateNotification(message, type = 'info', persistent = false) {
+        // 清除之前的定时器
+        if (currentNotificationTimeout) {
+            clearTimeout(currentNotificationTimeout);
+            currentNotificationTimeout = null;
+        }
+        
+        updateNotificationArea.innerHTML = `<div style="padding: 8px; border-radius: 4px; font-size: 12px; text-align: center; background: ${type === 'error' ? '#ff6768' : type === 'success' ? 'var(--highlight-color)' : 'var(--accent-color)'}; color: ${type === 'success' ? 'var(--primary-bg)' : 'white'}; word-wrap: break-word; line-height: 1.3;">${message}</div>`;
+        
+        // 只有非持久化的通知才会自动消失
+        if (!persistent && type !== 'success' && type !== 'available') {
+            currentNotificationTimeout = setTimeout(() => {
+                updateNotificationArea.innerHTML = '';
+                currentNotificationTimeout = null;
+            }, 8000); // 延长到8秒
+        }
+    }
+    
+    checkUpdateButton.addEventListener('click', () => {
+        showUpdateNotification("正在检查更新...", 'info', false);
+        window.voidAPI.checkForUpdates();
+    });
+
+    window.voidAPI.onUpdateAvailable((info) => {
+        showUpdateNotification(`发现新版本 ${info.version}。点击此处开始下载。`, 'available', true);
+        const notificationDiv = updateNotificationArea.querySelector('div');
+        notificationDiv.style.cursor = 'pointer';
+        notificationDiv.onclick = function() {
+            showUpdateNotification("正在下载更新...", 'info', true);
+            window.voidAPI.downloadUpdate();
+            // 移除点击事件
+            const newDiv = updateNotificationArea.querySelector('div');
+            if (newDiv) {
+                newDiv.onclick = null;
+                newDiv.style.cursor = 'default';
+            }
+        };
+    });
+
+    window.voidAPI.onUpdateNotAvailable(() => {
+        showUpdateNotification("已是最新版本", 'info', false);
+    });
+
+    window.voidAPI.onUpdateDownloadProgress((progressObj) => {
+        const percent = Math.floor(progressObj.percent);
+        checkUpdateButton.textContent = `下载中... ${percent}%`;
+        showUpdateNotification(`下载进度: ${percent}% (${Math.floor(progressObj.transferred / 1024 / 1024)}MB / ${Math.floor(progressObj.total / 1024 / 1024)}MB)`, 'info', true);
+    });
+
+    window.voidAPI.onUpdateDownloaded(() => {
+        checkUpdateButton.textContent = '检查更新';
+        showUpdateNotification("更新已下载。点击此处重启以应用。", 'success', true);
+        const notificationDiv = updateNotificationArea.querySelector('div');
+        notificationDiv.style.cursor = 'pointer';
+        notificationDiv.onclick = function() {
+            window.voidAPI.quitAndInstall();
+        };
+    });
+
+    window.voidAPI.onUpdateError((err) => {
+        showUpdateNotification(`更新出错: ${err.message}`, 'error', false);
+    });
 });

@@ -22,5 +22,15 @@ contextBridge.exposeInMainWorld('voidAPI', {
   minimizeWindow: () => ipcRenderer.send('minimize-window'),
   maximizeWindow: () => ipcRenderer.send('maximize-window'),
   openExternalLink: (url) => ipcRenderer.send('open-external-link', url),
-  closeWindow: () => ipcRenderer.send('close-window')
+  
+  checkForUpdates: () => ipcRenderer.send('check-for-updates'),
+  downloadUpdate: () => ipcRenderer.send('download-update'),
+  quitAndInstall: () => ipcRenderer.send('quit-and-install'),
+  onUpdateAvailable: (callback) => ipcRenderer.on('update-available', (event, ...args) => callback(...args)),
+  onUpdateNotAvailable: (callback) => ipcRenderer.on('update-not-available', (event, ...args) => callback(...args)),
+  onUpdateDownloadProgress: (callback) => ipcRenderer.on('update-download-progress', (event, ...args) => callback(...args)),
+  onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', (event, ...args) => callback(...args)),
+  onUpdateError: (callback) => ipcRenderer.on('update-error', (event, ...args) => callback(...args)),
+  closeWindow: () => ipcRenderer.send('close-window'),
+  
 });

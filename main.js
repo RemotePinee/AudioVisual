@@ -73,7 +73,8 @@ let view;
 let currentThemeCss = `:root { --primary-bg: #1e1e2f; --accent-color: #3a3d5b; --highlight-color: #ff6768; }`;
 const scrollbarCss = fs.readFileSync(path.join(__dirname, 'assets', 'css', 'view-style.css'), 'utf8');
 
-// --- Preload Drama Sites ---
+// --- Pre-rendering Logic ---
+const preloadedViews = new Map(); // Stores fully rendered BrowserViews
 const dramaSites = [
     'https://www.netflixgc.com/',
     'https://www.7.movie/',
@@ -82,30 +83,124 @@ const dramaSites = [
 ];
 
 async function preloadSites() {
-    console.log('Starting preload of drama sites...');
-    const ghostView = new BrowserView();
-    // We don't attach it to any window, it's invisible.
-    
+    console.log('Starting pre-rendering of drama sites...');
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
     for (const url of dramaSites) {
         try {
-            console.log(`Preloading ${url}`);
-            await ghostView.webContents.loadURL(url, { cache: 'force-cache' });
-            console.log(`Finished preloading ${url}`);
+            console.log(`Pre-rendering ${url}`);
+            const ghostView = new BrowserView({
+                webPreferences: {
+                    contextIsolation: true,
+                    nodeIntegration: false,
+                    preload: path.join(__dirname, 'assets', 'js', 'preload-web.js'),
+                    plugins: true
+                }
+            });
+
+            const loadPromise = new Promise((resolve, reject) => {
+                const handleFinish = () => {
+                    cleanup();
+                    resolve();
+                };
+                const handleFail = (event, errorCode, errorDescription) => {
+                    cleanup();
+                    if (errorCode !== -3) { // -3 is ABORTED
+                       reject(new Error(`ERR_FAILED (${errorCode}) loading '${url}': ${errorDescription}`));
+                    } else {
+                       resolve();
+                    }
+                };
+                const cleanup = () => {
+                    ghostView.webContents.removeListener('did-finish-load', handleFinish);
+                    ghostView.webContents.removeListener('did-fail-load', handleFail);
+                };
+
+                ghostView.webContents.on('did-finish-load', handleFinish);
+                ghostView.webContents.on('did-fail-load', handleFail);
+                ghostView.webContents.loadURL(url);
+            });
+
+            await loadPromise;
+            preloadedViews.set(url, ghostView); // Store the fully rendered view
+            console.log(`Finished pre-rendering ${url}`);
         } catch (error) {
-            console.error(`Failed to preload ${url}:`, error);
+            console.error(`Failed to pre-render ${url}:`, error);
         }
+        await delay(500);
     }
-    
-    // Clean up the ghost view
-    ghostView.webContents.destroy();
-    console.log('Preloading complete.');
+    console.log('Pre-rendering complete.');
 }
 
+function attachViewEvents(targetView) {
+  if (!targetView || !targetView.webContents || targetView.webContents.isDestroyed()) {
+    return;
+  }
+
+  targetView.webContents.on('dom-ready', () => {
+    if (targetView && targetView.webContents && !targetView.webContents.isDestroyed()) {
+      const combinedCss = currentThemeCss + '\n' + scrollbarCss;
+      targetView.webContents.insertCSS(combinedCss); // Use insertCSS for reliability
+      updateViewBounds(true);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('load-finished');
+      }
+    }
+  });
+
+  targetView.webContents.on('did-start-navigation', (event, url, isInPlace, isMainFrame) => {
+    if (isMainFrame && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('url-updated', url);
+    }
+  });
+
+  targetView.webContents.setWindowOpenHandler(({ url }) => {
+    if (targetView && targetView.webContents && !targetView.webContents.isDestroyed()) {
+      targetView.webContents.loadURL(url);
+    }
+    return { action: 'deny' };
+  });
+
+  const updateNavigationState = () => {
+    if (mainWindow && !mainWindow.isDestroyed() && targetView && targetView.webContents && !targetView.webContents.isDestroyed()) {
+      const navState = {
+        canGoBack: targetView.webContents.canGoBack(),
+        canGoForward: targetView.webContents.canGoForward()
+      };
+      mainWindow.webContents.send('nav-state-updated', navState);
+    }
+  };
+  targetView.webContents.on('did-navigate', updateNavigationState);
+  targetView.webContents.on('did-navigate-in-page', updateNavigationState);
+}
+
+function updateViewBounds(isVisible = true) {
+  if (!mainWindow || !view) return;
+  const isFullScreen = mainWindow.isFullScreen();
+  if (isFullScreen) {
+    const bounds = mainWindow.getBounds();
+    view.setBounds({ x: 0, y: 0, width: bounds.width, height: bounds.height });
+  } else {
+    const sidebarWidth = 250;
+    const topBarHeight = 56;
+    const contentBounds = mainWindow.getContentBounds();
+    if (isVisible) {
+      view.setBounds({
+        x: sidebarWidth,
+        y: topBarHeight,
+        width: contentBounds.width - sidebarWidth,
+        height: contentBounds.height - topBarHeight
+      });
+    } else {
+      view.setBounds({ x: sidebarWidth, y: topBarHeight, width: 0, height: 0 });
+    }
+  }
+}
 
 function createWindow () {
   mainWindow = new BrowserWindow({
     width: 1280,
-    height: 800,
+    height: 900,
     frame: false,
     titleBarStyle: 'hidden',
     webPreferences: {
@@ -119,10 +214,10 @@ function createWindow () {
 
   mainWindow.loadFile('index.html');
   if (isDev) {
-    // mainWindow.webContents.openDevTools(); 
+    // mainWindow.webContents.openDevTools();
   }
   mainWindow.setMenu(null);
-  
+
   view = new BrowserView({
     webPreferences: {
       contextIsolation: true,
@@ -133,32 +228,9 @@ function createWindow () {
   });
 
   mainWindow.setBrowserView(view);
+  attachViewEvents(view);
   updateViewBounds(false); // Initially hidden
 
-  view.webContents.on('dom-ready', () => {
-    if (view && view.webContents) {
-      const combinedCss = currentThemeCss + '\n' + scrollbarCss;
-      view.webContents.send('update-styles', combinedCss);
-      updateViewBounds(true); // Show the view
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('load-finished');
-      }
-    }
-  });
-
-  view.webContents.on('did-start-navigation', (event, url, isInPlace, isMainFrame) => {
-    if (isMainFrame) {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('url-updated', url);
-        }
-    }
-  });
-  
-  view.webContents.setWindowOpenHandler(({ url }) => {
-     view.webContents.loadURL(url, { cache: 'force-cache' });
-     return { action: 'deny' };
-   });
- 
   // --- Window Controls ---
   ipcMain.on('minimize-window', () => mainWindow.minimize());
   ipcMain.on('maximize-window', () => {
@@ -166,18 +238,39 @@ function createWindow () {
     else mainWindow.maximize();
   });
   ipcMain.on('close-window', () => mainWindow.close());
+  ipcMain.on('set-view-visibility', (event, visible) => {
+    updateViewBounds(visible);
+  });
 
    // --- Navigation Logic ---
    ipcMain.on('navigate', async (event, { url, isPlatformSwitch, themeVars }) => {
-    if (view && view.webContents) {
-        updateViewBounds(false); // Hide view before navigation
-        if (isPlatformSwitch) {
-            await view.webContents.session.clearStorageData({ storages: ['cookies'] });
+    if (themeVars) {
+        currentThemeCss = `:root { ${Object.entries(themeVars).map(([key, value]) => `${key}: ${value}`).join('; ')} }`;
+    }
+
+    if (preloadedViews.has(url)) {
+        const newView = preloadedViews.get(url);
+        preloadedViews.delete(url); // Use it only once
+
+        if (view) {
+            mainWindow.removeBrowserView(view);
+            if (view.webContents && !view.webContents.isDestroyed()) {
+                view.webContents.destroy();
+            }
         }
-        if (themeVars) {
-            currentThemeCss = `:root { ${Object.entries(themeVars).map(([key, value]) => `${key}: ${value}`).join('; ')} }`;
+
+        view = newView;
+        mainWindow.setBrowserView(view);
+        attachViewEvents(view);
+        updateViewBounds(true);
+    } else {
+        if (view && view.webContents) {
+            updateViewBounds(false);
+            if (isPlatformSwitch) {
+                await view.webContents.session.clearStorageData({ storages: ['cookies'] });
+            }
+            view.webContents.loadURL(url);
         }
-        view.webContents.loadURL(url, { cache: 'force-cache' });
     }
 });
 
@@ -226,43 +319,6 @@ function createWindow () {
     }
   });
 
-  if (view && view.webContents) {
-    const updateNavigationState = () => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        const navState = {
-          canGoBack: view.webContents.canGoBack(),
-          canGoForward: view.webContents.canGoForward()
-        };
-        mainWindow.webContents.send('nav-state-updated', navState);
-      }
-    };
-    view.webContents.on('did-navigate', updateNavigationState);
-    view.webContents.on('did-navigate-in-page', updateNavigationState);
-  }
-  
-  function updateViewBounds(isVisible = true) {
-    if (!mainWindow || !view) return;
-    const isFullScreen = mainWindow.isFullScreen();
-    if (isFullScreen) {
-      const bounds = mainWindow.getBounds();
-      view.setBounds({ x: 0, y: 0, width: bounds.width, height: bounds.height });
-    } else {
-      const sidebarWidth = 250;
-      const topBarHeight = 56;
-      const contentBounds = mainWindow.getContentBounds();
-      if (isVisible) {
-        view.setBounds({
-          x: sidebarWidth,
-          y: topBarHeight,
-          width: contentBounds.width - sidebarWidth,
-          height: contentBounds.height - topBarHeight
-        });
-      } else {
-        view.setBounds({ x: sidebarWidth, y: topBarHeight, width: 0, height: 0 });
-      }
-    }
-  }
-
   mainWindow.on('resize', () => updateViewBounds(view.getBounds().width > 0));
   mainWindow.on('enter-full-screen', () => updateViewBounds(true));
   mainWindow.on('leave-full-screen', () => setTimeout(() => updateViewBounds(true), 50));
@@ -271,10 +327,49 @@ function createWindow () {
 app.whenReady().then(async () => {
   await session.defaultSession.clearStorageData();
   session.defaultSession.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36');
-  await session.defaultSession.clearCache();
+
+  const filter = { urls: ['*://*/*'] };
+  session.defaultSession.webRequest.onHeadersReceived(filter, (details, callback) => {
+    if (details.responseHeaders) {
+      details.responseHeaders['Cache-Control'] = ['public, max-age=86400, immutable']; // 24 hours
+      delete details.responseHeaders['pragma'];
+      delete details.responseHeaders['expires'];
+    }
+    callback({ responseHeaders: details.responseHeaders });
+  });
+
+  const cacheInfoPath = path.join(app.getPath('userData'), 'cache_info.json');
+  const twentyFourHours = 24 * 60 * 60 * 1000;
+  let cacheIsValid = false;
+
+  if (fs.existsSync(cacheInfoPath)) {
+    try {
+      const cacheInfo = JSON.parse(fs.readFileSync(cacheInfoPath, 'utf8'));
+      if (cacheInfo.lastPreloadTimestamp && (Date.now() - cacheInfo.lastPreloadTimestamp < twentyFourHours)) {
+        cacheIsValid = true;
+        console.log('Pre-rendering cache is still valid.');
+      }
+    } catch (error) {
+      console.error('Error reading cache info file:', error);
+    }
+  }
+
   createWindow();
-  checkUpdate(); // Check for updates
-  preloadSites(); // Start preloading after the main window is created
+  
+
+  if (!cacheIsValid) {
+    console.log('Pre-rendering cache is stale or missing. Clearing cache and re-rendering.');
+    await session.defaultSession.clearCache();
+    await preloadSites();
+    try {
+      fs.writeFileSync(cacheInfoPath, JSON.stringify({ lastPreloadTimestamp: Date.now() }));
+      console.log('Updated pre-rendering cache timestamp.');
+    } catch (error) {
+      console.error('Error writing cache info file:', error);
+    }
+  } else {
+    console.log('Skipping pre-rendering as cache is valid.');
+  }
 });
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
@@ -282,64 +377,46 @@ app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(
 ipcMain.on('open-external-link', (event, url) => {
   shell.openExternal(url);
 });
+ipcMain.on('check-for-updates', () => {
+  checkUpdate();
+});
+
+ipcMain.on('download-update', () => {
+  autoUpdater.downloadUpdate();
+});
+
+ipcMain.on('quit-and-install', () => {
+  autoUpdater.quitAndInstall();
+});
 
 // --- Auto Updater ---
 const { autoUpdater } = require('electron-updater');
 
 function checkUpdate() {
-  autoUpdater.setFeedURL({
-    provider: 'gitee',
-    owner: 'sadka',
-    repo: 'audio-visual'
-  });
+  // 开发模式下禁用强制更新配置，避免开发时的不必要更新检查
+  // if (isDev) {
+  //   autoUpdater.forceDevUpdateConfig = true;
+  // }
+  
 
-  // Event: Found a new version
   autoUpdater.on('update-available', (info) => {
-    dialog.showMessageBox({
-      type: 'info',
-      title: '发现新版本',
-      message: `检测到新版本 v${info.version}，是否立即更新？`,
-      detail: info.releaseNotes.replace(/<[^>]+>/g, ''), // Show release notes from Gitee
-      buttons: ['立即更新', '以后再说'],
-      defaultId: 0,
-      cancelId: 1
-    }).then(({ response }) => {
-      if (response === 0) {
-        // User chose to update, start downloading
-        autoUpdater.downloadUpdate();
-        mainWindow.webContents.send('update-download-started'); // Optional: notify renderer
-      }
-    });
+    mainWindow.webContents.send('update-available', info);
   });
 
-  // Event: No new version found
   autoUpdater.on('update-not-available', () => {
-    // You can uncomment the line below for testing purposes
-    // dialog.showMessageBox({ title: '检查更新', message: '当前已是最新版本。' });
+    mainWindow.webContents.send('update-not-available');
   });
 
-  // Event: Update downloaded
+  autoUpdater.on('download-progress', (progressObj) => {
+    mainWindow.webContents.send('update-download-progress', progressObj);
+  });
+
   autoUpdater.on('update-downloaded', () => {
-    dialog.showMessageBox({
-      type: 'info',
-      title: '更新准备就绪',
-      message: '新版本已下载完成，是否立即重启以完成安装？',
-      buttons: ['立即重启', '稍后重启'],
-      defaultId: 0,
-      cancelId: 1
-    }).then(({ response }) => {
-      if (response === 0) {
-        // User chose to restart now
-        autoUpdater.quitAndInstall();
-      }
-    });
+    mainWindow.webContents.send('update-downloaded');
   });
 
-  // Event: Error during update
   autoUpdater.on('error', (err) => {
-    console.error('更新出错:', err);
-    // You can uncomment the line below for testing purposes
-    // dialog.showErrorBox('更新出错', `检查更新时遇到问题：${err.message}`);
+    mainWindow.webContents.send('update-error', err);
   });
 
   // Start checking for updates

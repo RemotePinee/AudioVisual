@@ -1,6 +1,6 @@
 {
   "name": "audiovisual",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "The key to unlock all streams.",
   "main": "main.js",
   "scripts": {
@@ -22,8 +22,8 @@
     "appId": "com.void.player",
     "publish": {
       "provider": "github",
-      "owner": "sadka",
-      "repo": "audio-visual"
+      "owner": "RemotePinee",
+      "repo": "AudioVisual"
     },
     "productName": "AudioVisual",
     "files": [
