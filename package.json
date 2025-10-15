@@ -32,13 +32,17 @@
       "assets/**/*"
     ],
     "win": {
-      "target": "nsis",
+      "target": {
+        "target": "nsis",
+        "arch": ["x64"]
+      },
       "icon": "assets/images/icon.png"
     },
     "compression": "maximum",
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "differentialPackage": true
     },
     "electronDownload": {
       "mirror": "https://npm.taobao.org/mirrors/electron/"
