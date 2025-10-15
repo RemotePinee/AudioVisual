@@ -47,7 +47,7 @@
     },
     "mac": {
       "target": "dmg",
-      "icon": "assets/images/icon.png",
+      "icon": "assets/images/icon-512.png",
       "category": "public.app-category.entertainment"
     },
     "linux": {
