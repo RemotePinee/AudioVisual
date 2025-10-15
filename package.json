@@ -5,9 +5,16 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux",
+    "dist:all": "electron-builder --win --mac --linux"
   },
-  "author": "The Void",
+  "author": {
+    "name": "AudioVisual",
+    "email": "fenghaoran60@gmail.com"
+  },
   "license": "UNLICENSED",
   "devDependencies": {
     "electron": "^28.2.0",
@@ -38,6 +45,21 @@
       },
       "icon": "assets/images/icon.png"
     },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/images/icon.png",
+      "category": "public.app-category.entertainment"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/images/icon.png",
+      "category": "AudioVideo"
+    },
     "compression": "maximum",
     "nsis": {
       "oneClick": false,
@@ -45,7 +67,7 @@
       "differentialPackage": true
     },
     "electronDownload": {
-      "mirror": "https://npm.taobao.org/mirrors/electron/"
+      "mirror": "https://npmmirror.com/mirrors/electron/"
     }
   }
 }
