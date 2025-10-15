@@ -1,6 +1,6 @@
 {
   "name": "audiovisual",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "The key to unlock all streams.",
   "main": "main.js",
   "scripts": {
@@ -15,10 +15,16 @@
     "electron-reloader": "^1.2.3"
   },
   "dependencies": {
-    "axios": "^1.4.0"
+    "axios": "^1.4.0",
+    "electron-updater": "^6.6.2"
   },
   "build": {
     "appId": "com.void.player",
+    "publish": {
+      "provider": "github",
+      "owner": "sadka",
+      "repo": "audio-visual"
+    },
     "productName": "AudioVisual",
     "files": [
       "main.js",

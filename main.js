@@ -1,6 +1,6 @@
 // main.js
 
-const { app, BrowserWindow, BrowserView, ipcMain, session, shell } = require('electron');
+const { app, BrowserWindow, BrowserView, ipcMain, session, shell, dialog } = require('electron');
 
 const path = require('path');
 const fs = require('fs');
@@ -273,6 +273,7 @@ app.whenReady().then(async () => {
   session.defaultSession.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36');
   await session.defaultSession.clearCache();
   createWindow();
+  checkUpdate(); // Check for updates
   preloadSites(); // Start preloading after the main window is created
 });
 
@@ -281,3 +282,66 @@ app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(
 ipcMain.on('open-external-link', (event, url) => {
   shell.openExternal(url);
 });
+
+// --- Auto Updater ---
+const { autoUpdater } = require('electron-updater');
+
+function checkUpdate() {
+  autoUpdater.setFeedURL({
+    provider: 'gitee',
+    owner: 'sadka',
+    repo: 'audio-visual'
+  });
+
+  // Event: Found a new version
+  autoUpdater.on('update-available', (info) => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: '发现新版本',
+      message: `检测到新版本 v${info.version}，是否立即更新？`,
+      detail: info.releaseNotes.replace(/<[^>]+>/g, ''), // Show release notes from Gitee
+      buttons: ['立即更新', '以后再说'],
+      defaultId: 0,
+      cancelId: 1
+    }).then(({ response }) => {
+      if (response === 0) {
+        // User chose to update, start downloading
+        autoUpdater.downloadUpdate();
+        mainWindow.webContents.send('update-download-started'); // Optional: notify renderer
+      }
+    });
+  });
+
+  // Event: No new version found
+  autoUpdater.on('update-not-available', () => {
+    // You can uncomment the line below for testing purposes
+    // dialog.showMessageBox({ title: '检查更新', message: '当前已是最新版本。' });
+  });
+
+  // Event: Update downloaded
+  autoUpdater.on('update-downloaded', () => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: '更新准备就绪',
+      message: '新版本已下载完成，是否立即重启以完成安装？',
+      buttons: ['立即重启', '稍后重启'],
+      defaultId: 0,
+      cancelId: 1
+    }).then(({ response }) => {
+      if (response === 0) {
+        // User chose to restart now
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+
+  // Event: Error during update
+  autoUpdater.on('error', (err) => {
+    console.error('更新出错:', err);
+    // You can uncomment the line below for testing purposes
+    // dialog.showErrorBox('更新出错', `检查更新时遇到问题：${err.message}`);
+  });
+
+  // Start checking for updates
+  autoUpdater.checkForUpdates();
+}
