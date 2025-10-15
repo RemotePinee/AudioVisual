@@ -12,10 +12,9 @@ const youkuCustomPage = document.getElementById('youku-custom-page');
 const youkuUrlInput = document.getElementById('youku-url-input');
 const loadingOverlay = document.getElementById('loading-overlay');
 
-let currentVideoUrl = ''; // 用于存储非优酷平台的原始视频URL
-let isCurrentlyParsing = false; // 用于跟踪是否处于嵌入式解析播放状态
-let currentYoukuUrl = ''; // 用于存储当前正在解析的优酷URL
-let isYoukuParsing = false; // 状态锁：标记是否正在进行优酷解析
+let currentVideoUrl = '';
+let isCurrentlyParsing = false;
+let currentYoukuUrl = '';
 
 const platforms = [
     { value: 'https://v.qq.com', label: '腾讯视频' },
@@ -65,23 +64,22 @@ function triggerParse() {
 
 function parseYoukuUrl() {
     let youkuVideoUrl = youkuUrlInput.value.trim() || currentYoukuUrl;
-
     if (youkuVideoUrl) {
-        isYoukuParsing = true; 
-        currentYoukuUrl = youkuVideoUrl; 
+        currentYoukuUrl = youkuVideoUrl;
         const selectedApiUrl = apiSelect.value;
         const finalUrl = selectedApiUrl + youkuVideoUrl;
-
         urlInput.value = currentYoukuUrl;
         loadingOverlay.classList.remove('hidden');
-        window.voidAPI.setViewVisibility(true);
         window.voidAPI.navigate(finalUrl, false);
-
         youkuCustomPage.style.display = 'none';
-        // Let main process control visibility
     } else {
         alert('请输入有效的优酷视频链接。');
     }
+}
+
+function navigateTo(url, isPlatformSwitch = false, themeVars = null) {
+    loadingOverlay.classList.remove('hidden');
+    window.voidAPI.navigate(url, isPlatformSwitch, themeVars);
 }
 
 populateSelect(platformSelect, platforms);
@@ -90,18 +88,13 @@ populateSelect(apiSelect, apiList);
 platformSelect.addEventListener('change', (event) => {
     const selectedPlatform = event.target.value;
     isCurrentlyParsing = false;
-    isYoukuParsing = false; 
-    currentYoukuUrl = ''; 
-
+    currentYoukuUrl = '';
     if (selectedPlatform === 'https://www.youku.com') {
         youkuCustomPage.style.display = 'flex';
-        window.voidAPI.setViewVisibility(false);
         urlInput.value = '';
     } else {
         youkuCustomPage.style.display = 'none';
-        loadingOverlay.classList.remove('hidden');
-        window.voidAPI.setViewVisibility(true); // Keep it visible but it will be covered by loader
-        window.voidAPI.navigate(selectedPlatform, true);
+        navigateTo(selectedPlatform, true);
     }
 });
 
@@ -109,12 +102,9 @@ goButton.addEventListener('click', () => {
     let url = urlInput.value.trim();
     if (url) {
         isCurrentlyParsing = false;
-        isYoukuParsing = false; 
         if (!url.startsWith('http')) url = 'https' + '://' + url;
         currentVideoUrl = url;
-        loadingOverlay.classList.remove('hidden');
-        window.voidAPI.setViewVisibility(true);
-        window.voidAPI.navigate(url, false);
+        navigateTo(url);
     }
 });
 
@@ -124,7 +114,6 @@ parseButton.addEventListener('click', () => {
     if (platformSelect.value === 'https://www.youku.com') {
         parseYoukuUrl();
     } else {
-        isYoukuParsing = false; 
         isCurrentlyParsing = true;
         triggerParse();
     }
@@ -141,33 +130,22 @@ forwardButton.addEventListener('click', () => window.voidAPI.goForward());
 
 homeButton.addEventListener('click', () => {
     isCurrentlyParsing = false;
-    isYoukuParsing = false;
-
     const isDramaMode = container.classList.contains('drama-mode');
-
     if (isDramaMode) {
-        // In drama mode, go to the root of the current site
         try {
             const currentUrl = new URL(urlInput.value);
             const rootUrl = `${currentUrl.protocol}//${currentUrl.hostname}`;
-            loadingOverlay.classList.remove('hidden');
-            window.voidAPI.setViewVisibility(true);
-            window.voidAPI.navigate(rootUrl, false);
+            navigateTo(rootUrl);
         } catch (error) {
-            // If the URL is invalid, do nothing or provide feedback
             console.error("Invalid URL in address bar:", urlInput.value);
         }
     } else {
-        // In normal mode, use the platform dropdown
         const homeUrl = platformSelect.value;
         if (homeUrl === 'https://www.youku.com') {
             youkuCustomPage.style.display = 'flex';
-            window.voidAPI.setViewVisibility(false);
             urlInput.value = '';
         } else {
-            loadingOverlay.classList.remove('hidden');
-            window.voidAPI.setViewVisibility(true);
-            window.voidAPI.navigate(homeUrl, true);
+            navigateTo(homeUrl, true);
         }
     }
 });
@@ -179,10 +157,8 @@ closeButton.addEventListener('click', () => window.voidAPI.closeWindow());
 window.voidAPI.onUrlUpdate((url) => {
     const isApiUrl = apiList.some(api => url.startsWith(api.value));
     if (isApiUrl) {
-        // If it's a parsing API URL, display the original video URL.
         urlInput.value = currentVideoUrl;
     } else {
-        // Otherwise, display the new URL from the main process.
         urlInput.value = url;
         currentVideoUrl = url;
     }
@@ -193,15 +169,13 @@ window.voidAPI.onNavStateUpdate(({ canGoBack, canGoForward }) => {
   forwardButton.disabled = !canGoForward;
 });
 
-// Listen for the main process to signal that loading is finished
 window.voidAPI.onLoadFinished(() => {
     loadingOverlay.classList.add('hidden');
 });
 
 function initialize() {
     if (platforms.length > 0) {
-        loadingOverlay.classList.remove('hidden');
-        window.voidAPI.navigate(platforms.value, true);
+        navigateTo(platforms[0].value, true);
     }
 }
 initialize();
@@ -215,11 +189,9 @@ const dramaControls = document.querySelector('.drama-controls');
 const usageTips = document.querySelector('.usage-tips');
 const dramaUsageTips = document.querySelector('.drama-usage-tips');
 
-// Set initial state for drama controls
 dramaControls.style.display = 'none';
 dramaUsageTips.style.display = 'none';
 
-// Helper function to update the DOM for theme changes
 function updateDOMForTheme(isSwitchingToDrama) {
     if (isSwitchingToDrama) {
         dramaModeButton.textContent = '国内解析';
@@ -229,7 +201,7 @@ function updateDOMForTheme(isSwitchingToDrama) {
         usageTips.style.display = 'none';
         dramaControls.style.display = 'block';
         dramaUsageTips.style.display = 'block';
-        youkuCustomPage.style.display = 'none'; // Ensure youku page is hidden
+        youkuCustomPage.style.display = 'none';
     } else {
         dramaModeButton.textContent = '美韩日剧';
         dramaTheme.disabled = true;
@@ -241,111 +213,58 @@ function updateDOMForTheme(isSwitchingToDrama) {
     }
 }
 
-// Helper function to handle navigation and loading indicators
 function navigateForTheme(isSwitchingToDrama) {
-    window.voidAPI.setViewVisibility(false); // Hide view immediately to prevent flashing
-    loadingOverlay.classList.remove('hidden'); // Show loader
-
-    if (isSwitchingToDrama) {
-        window.voidAPI.navigate('https://www.netflixgc.com/', false, {
-            '--primary-bg': '#000000',
-            '--accent-color': '#333333',
-            '--highlight-color': '#C0FAA0'
-        });
+    const theme = isSwitchingToDrama ? {
+        '--primary-bg': '#000000',
+        '--accent-color': '#333333',
+        '--highlight-color': '#C0FAA0'
+    } : {
+        '--primary-bg': '#1e1e2f',
+        '--accent-color': '#3a3d5b',
+        '--highlight-color': '#ff6768'
+    };
+    const url = isSwitchingToDrama ? 'https://www.netflixgc.com/' : platformSelect.value;
+    
+    if (url === 'https://www.youku.com' && !isSwitchingToDrama) {
+        youkuCustomPage.style.display = 'flex';
     } else {
-        const homeUrl = platformSelect.value;
-        if (homeUrl === 'https://www.youku.com') {
-            youkuCustomPage.style.display = 'flex';
-            loadingOverlay.classList.add('hidden'); // No loading for youku page
-        } else {
-            window.voidAPI.navigate(homeUrl, true, {
-                '--primary-bg': '#1e1e2f',
-                '--accent-color': '#3a3d5b',
-                '--highlight-color': '#ff6768'
-            });
-        }
+        navigateTo(url, !isSwitchingToDrama, theme);
     }
 }
 
 dramaModeButton.addEventListener('click', (event) => {
     const isCurrentlyDrama = container.classList.contains('drama-mode');
     const isSwitchingToDrama = !isCurrentlyDrama;
-
-    // Handle navigation and visibility first
     navigateForTheme(isSwitchingToDrama);
 
-    // Check for View Transitions support to animate the theme change
     if (!document.startViewTransition) {
         updateDOMForTheme(isSwitchingToDrama);
         return;
     }
 
-    // Get click coordinates for the reveal animation
     const x = event.clientX;
     const y = event.clientY;
-    const endRadius = Math.hypot(
-        Math.max(x, window.innerWidth - x),
-        Math.max(y, window.innerHeight - y)
-    );
-
-    const transition = document.startViewTransition(() => {
-        updateDOMForTheme(isSwitchingToDrama);
-    });
-
-    // Customize the animation
+    const endRadius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    const transition = document.startViewTransition(() => updateDOMForTheme(isSwitchingToDrama));
     transition.ready.then(() => {
         document.documentElement.animate(
-            {
-                clipPath: [
-                    `circle(0 at ${x}px ${y}px)`,
-                    `circle(${endRadius}px at ${x}px ${y}px)`,
-                ],
-            },
-            {
-                duration: 600,
-                easing: 'ease-in-out',
-                pseudoElement: '::view-transition-new(root)',
-            }
+            { clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`] },
+            { duration: 600, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
         );
     });
 });
 
-netflixFactoryButton.addEventListener('click', () => {
-    loadingOverlay.classList.remove('hidden');
-    window.voidAPI.setViewVisibility(true);
-    window.voidAPI.navigate('https://www.netflixgc.com/', false);
-});
+netflixFactoryButton.addEventListener('click', () => navigateTo('https://www.netflixgc.com/'));
+document.getElementById('7-movie-button').addEventListener('click', () => navigateTo('https://www.7.movie/'));
+document.getElementById('kanpian-button').addEventListener('click', () => navigateTo('https://kunzejiaoyu.net/'));
+document.getElementById('gazf-button').addEventListener('click', () => navigateTo('https://gaze.run/'));
 
-// --- External Link Handler ---
 document.addEventListener('DOMContentLoaded', () => {
     const externalLink = document.querySelector('.footer a');
     if (externalLink) {
         externalLink.addEventListener('click', (event) => {
-            event.preventDefault(); // Prevent the default navigation
-            const url = event.currentTarget.href;
-            window.voidAPI.openExternalLink(url);
+            event.preventDefault();
+            window.voidAPI.openExternalLink(event.currentTarget.href);
         });
     }
-});
-
-const sevenMovieButton = document.getElementById('7-movie-button');
-const kanpianButton = document.getElementById('kanpian-button');
-const gazfButton = document.getElementById('gazf-button');
-
-sevenMovieButton.addEventListener('click', () => {
-    loadingOverlay.classList.remove('hidden');
-    window.voidAPI.setViewVisibility(true);
-    window.voidAPI.navigate('https://www.7.movie/', false);
-});
-
-kanpianButton.addEventListener('click', () => {
-    loadingOverlay.classList.remove('hidden');
-    window.voidAPI.setViewVisibility(true);
-    window.voidAPI.navigate('https://kunzejiaoyu.net/', false);
-});
-
-gazfButton.addEventListener('click', () => {
-    loadingOverlay.classList.remove('hidden');
-    window.voidAPI.setViewVisibility(true);
-    window.voidAPI.navigate('https://gaze.run/', false);
 });
