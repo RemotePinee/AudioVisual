@@ -22,7 +22,22 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
+        
+    - name: Clean npm cache
+      run: npm cache clean --force
+      
+    - name: Remove package-lock.json if exists
+      run: |
+        if (Test-Path package-lock.json) { Remove-Item package-lock.json -Force }
+        if (Test-Path npm-shrinkwrap.json) { Remove-Item npm-shrinkwrap.json -Force }
+      shell: pwsh
+      if: matrix.os == 'windows-latest'
+      
+    - name: Remove package-lock.json if exists (Unix)
+      run: |
+        rm -f package-lock.json npm-shrinkwrap.json
+      shell: bash
+      if: matrix.os != 'windows-latest'
         
     - name: Install dependencies
       run: npm install
@@ -37,7 +52,11 @@ jobs:
       
     - name: Build for Linux
       if: matrix.os == 'ubuntu-latest'
-      run: npm run dist:linux
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ruby ruby-dev rubygems build-essential
+        sudo gem install --no-document fpm
+        npm run dist:linux
       
     - name: Upload Windows artifacts
       if: matrix.os == 'windows-latest'
