@@ -11,6 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         
@@ -26,7 +27,7 @@ jobs:
     - name: Clean npm cache
       run: npm cache clean --force
       
-    - name: Remove package-lock.json if exists
+    - name: Remove lock files
       run: |
         rm -f package-lock.json npm-shrinkwrap.json
       shell: bash
@@ -34,31 +35,36 @@ jobs:
     - name: Install dependencies
       run: npm install
       
+    - name: Install Linux dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ruby ruby-dev rubygems build-essential
+        sudo gem install --no-document fpm
+      
     - name: Build for macOS
       if: matrix.os == 'macos-latest'
       run: npm run dist:mac
       
     - name: Build for Linux
       if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ruby ruby-dev rubygems build-essential
-        sudo gem install --no-document fpm
-        npm run dist:linux
+      run: npm run dist:linux
       
     - name: Upload macOS artifacts
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-latest' && success()
       uses: actions/upload-artifact@v4
       with:
         name: macos-build
         path: dist/*.dmg
+        if-no-files-found: warn
         
     - name: Upload Linux artifacts
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-latest' && success()
       uses: actions/upload-artifact@v4
       with:
         name: linux-build
         path: dist/*.deb
+        if-no-files-found: warn
 
   release:
     needs: build
