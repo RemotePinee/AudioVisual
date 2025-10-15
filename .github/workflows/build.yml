@@ -12,7 +12,7 @@ jobs:
     
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         
     steps:
     - name: Checkout code
@@ -28,23 +28,11 @@ jobs:
       
     - name: Remove package-lock.json if exists
       run: |
-        if (Test-Path package-lock.json) { Remove-Item package-lock.json -Force }
-        if (Test-Path npm-shrinkwrap.json) { Remove-Item npm-shrinkwrap.json -Force }
-      shell: pwsh
-      if: matrix.os == 'windows-latest'
-      
-    - name: Remove package-lock.json if exists (Unix)
-      run: |
         rm -f package-lock.json npm-shrinkwrap.json
       shell: bash
-      if: matrix.os != 'windows-latest'
         
     - name: Install dependencies
       run: npm install
-      
-    - name: Build for Windows
-      if: matrix.os == 'windows-latest'
-      run: npm run dist:win
       
     - name: Build for macOS
       if: matrix.os == 'macos-latest'
@@ -58,15 +46,6 @@ jobs:
         sudo gem install --no-document fpm
         npm run dist:linux
       
-    - name: Upload Windows artifacts
-      if: matrix.os == 'windows-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: windows-build
-        path: |
-          dist/*.exe
-          dist/*.exe.blockmap
-          
     - name: Upload macOS artifacts
       if: matrix.os == 'macos-latest'
       uses: actions/upload-artifact@v4
