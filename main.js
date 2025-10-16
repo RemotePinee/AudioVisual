@@ -426,7 +426,7 @@ ipcMain.on('quit-and-install', () => {
 const { autoUpdater } = require('electron-updater');
 
 function checkUpdate() {
-  // 开发模式下禁用强制更新配置，避免开发时的不必要更新检查
+  //开发模式下禁用强制更新配置，避免开发时的不必要更新检查
   // if (isDev) {
   //   autoUpdater.forceDevUpdateConfig = true;
   // }
