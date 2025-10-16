@@ -44,11 +44,11 @@ jobs:
       
     - name: Build for macOS
       if: matrix.os == 'macos-latest'
-      run: npm run dist:mac
+      run: npm run dist:mac -- --publish=never
       
     - name: Build for Linux
       if: matrix.os == 'ubuntu-latest'
-      run: npm run dist:linux
+      run: npm run dist:linux -- --publish=never
       
     - name: Upload macOS artifacts
       if: matrix.os == 'macos-latest' && success()

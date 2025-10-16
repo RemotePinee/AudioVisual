@@ -30,8 +30,7 @@
     "publish": {
       "provider": "github",
       "owner": "RemotePinee",
-      "repo": "AudioVisual",
-      "publishAutoUpdate": false
+      "repo": "AudioVisual"
     },
     "productName": "AudioVisual",
     "files": [
