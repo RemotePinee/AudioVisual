@@ -30,7 +30,8 @@
     "publish": {
       "provider": "github",
       "owner": "RemotePinee",
-      "repo": "AudioVisual"
+      "repo": "AudioVisual",
+      "publishAutoUpdate": false
     },
     "productName": "AudioVisual",
     "files": [
@@ -43,7 +44,7 @@
         "target": "nsis",
         "arch": ["x64"]
       },
-      "icon": "assets/images/icon.png"
+      "icon": "assets/images/icon-512.png"
     },
     "mac": {
       "target": "dmg",
