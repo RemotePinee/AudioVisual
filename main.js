@@ -322,6 +322,39 @@ function createWindow () {
   mainWindow.on('resize', () => updateViewBounds(view.getBounds().width > 0));
   mainWindow.on('enter-full-screen', () => updateViewBounds(true));
   mainWindow.on('leave-full-screen', () => setTimeout(() => updateViewBounds(true), 50));
+  
+  // 处理窗口最小化和恢复事件
+  mainWindow.on('minimize', () => {
+    // 窗口最小化时隐藏 BrowserView
+    if (view) {
+      view.setBounds({ x: 0, y: 0, width: 0, height: 0 });
+    }
+  });
+  
+  mainWindow.on('restore', () => {
+    // 窗口恢复时重新显示 BrowserView
+    if (view) {
+      updateViewBounds(true);
+      // 确保 BrowserView 可见
+      setTimeout(() => {
+        if (view && view.webContents) {
+          view.webContents.focus();
+        }
+      }, 100);
+    }
+  });
+  
+  mainWindow.on('show', () => {
+    // 窗口显示时确保 BrowserView 正常显示
+    if (view) {
+      updateViewBounds(true);
+      setTimeout(() => {
+        if (view && view.webContents) {
+          view.webContents.focus();
+        }
+      }, 100);
+    }
+  });
 }
 
 app.whenReady().then(async () => {

@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.4-blue.svg?style=for-the-badge&logo=semantic-release)
+![Version](https://img.shields.io/badge/version-1.0.5-blue.svg?style=for-the-badge&logo=semantic-release)
 ![License](https://img.shields.io/badge/license-UNLICENSED-red.svg?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)
 ![Electron](https://img.shields.io/badge/Electron-20+-47848F.svg?style=for-the-badge&logo=electron)
@@ -136,7 +136,12 @@ npm run dist
 
 ## 📝 更新日志
 
-### v1.0.4 (最新)
+### v1.0.5 (最新)
+- 🐛 修复窗口最小化后网站内容消失的问题
+- 🔧 优化窗口恢复逻辑，提升用户体验
+- 📦 更新构建配置，支持所有平台使用512x512图标
+
+### v1.0.4
 - ✨ 优化操作逻辑，提升用户体验
 - 🚀 添加缓存机制，提高应用性能
 - 🔧 修复更新通道，确保更新功能正常
