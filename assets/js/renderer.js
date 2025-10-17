@@ -86,31 +86,8 @@ function parseYoukuUrl() {
 }
 
 function navigateTo(url, isPlatformSwitch = false, themeVars = null) {
-    // 立即显示加载图标
     loadingOverlay.classList.remove('hidden');
-    
-    // 添加一个最小显示时间，确保用户能看到加载状态
-    const minLoadingTime = 500; // 500毫秒最小显示时间
-    const startTime = Date.now();
-    
-    // 设置一个标志来跟踪这次导航
-    const navigationId = Date.now() + Math.random();
-    window.currentNavigationId = navigationId;
-    
-    // 开始导航
     window.voidAPI.navigate(url, isPlatformSwitch, themeVars);
-    
-    // 设置一个超时，确保加载图标至少显示最小时间
-    setTimeout(() => {
-        // 只有当前导航ID匹配时才可能隐藏
-        if (window.currentNavigationId === navigationId) {
-            const elapsed = Date.now() - startTime;
-            if (elapsed >= minLoadingTime) {
-                // 如果页面还没有加载完成，继续显示加载图标
-                // onLoadFinished 会在页面真正加载完成时隐藏图标
-            }
-        }
-    }, minLoadingTime);
 }
 
 populateSelect(platformSelect, platforms);
@@ -252,8 +229,6 @@ window.voidAPI.onNavStateUpdate(({ canGoBack, canGoForward }) => {
 });
 
 window.voidAPI.onLoadFinished(() => {
-    // 清除当前导航ID，表示加载完成
-    window.currentNavigationId = null;
     loadingOverlay.classList.add('hidden');
 });
 

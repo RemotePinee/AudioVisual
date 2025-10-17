@@ -77,27 +77,6 @@
     color: var(--highlight-color);
 }
 
-/* Drama mode loading overlay */
-.drama-mode #loading-overlay {
-    background-color: rgba(0, 0, 0, 0.85); /* Black background with transparency */
-}
-
-.drama-mode .spinner {
-    border: 4px solid var(--accent-color);
-    border-top: 4px solid var(--highlight-color); /* Use drama mode highlight color */
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 1s linear infinite;
-    filter: drop-shadow(0 0 10px var(--highlight-color)); /* Add glow effect */
-}
-
-/* Ensure spin animation is available in drama mode */
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
 /* Transition effect */
 .container {
     transition: background-color 0.5s ease;

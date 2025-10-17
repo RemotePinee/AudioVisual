@@ -82,82 +82,54 @@ const dramaSites = [
     'https://gaze.run/'
 ];
 
-function preloadSites() {
-  return new Promise((resolve) => {
-    console.log('Starting background pre-rendering of drama sites...');
-    let completedCount = 0;
-    const totalSites = dramaSites.length;
-    
-    // 减少并发数量，避免资源争抢
-    const maxConcurrent = 2;
-    let currentIndex = 0;
-    
-    function preloadNext() {
-      if (currentIndex >= dramaSites.length) {
-        return;
-      }
-      
-      const url = dramaSites[currentIndex++];
-      const view = new BrowserView({
-        webPreferences: {
-          nodeIntegration: false,
-          contextIsolation: true,
-          webSecurity: true,
-          allowRunningInsecureContent: false,
-          experimentalFeatures: false,
-          // 减少内存使用
-          backgroundThrottling: true,
-          offscreen: true
-        }
-      });
+async function preloadSites() {
+    console.log('Starting pre-rendering of drama sites...');
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-      // 设置较短的超时时间
-      const timeout = setTimeout(() => {
-        console.log(`Pre-rendering timeout for ${url}`);
-        view.webContents.destroy();
-        completedCount++;
-        if (completedCount === totalSites) {
-          console.log('Background pre-rendering completed.');
-          resolve();
-        } else {
-          preloadNext();
-        }
-      }, 8000); // 减少到8秒
+    for (const url of dramaSites) {
+        try {
+            console.log(`Pre-rendering ${url}`);
+            const ghostView = new BrowserView({
+                webPreferences: {
+                    contextIsolation: true,
+                    nodeIntegration: false,
+                    preload: path.join(__dirname, 'assets', 'js', 'preload-web.js'),
+                    plugins: true
+                }
+            });
 
-      view.webContents.once('did-finish-load', () => {
-        clearTimeout(timeout);
-        console.log(`Successfully pre-rendered: ${url}`);
-        preloadedViews.set(url, view);
-        completedCount++;
-        if (completedCount === totalSites) {
-          console.log('Background pre-rendering completed.');
-          resolve();
-        } else {
-          preloadNext();
-        }
-      });
+            const loadPromise = new Promise((resolve, reject) => {
+                const handleFinish = () => {
+                    cleanup();
+                    resolve();
+                };
+                const handleFail = (event, errorCode, errorDescription) => {
+                    cleanup();
+                    if (errorCode !== -3) { // -3 is ABORTED
+                       reject(new Error(`ERR_FAILED (${errorCode}) loading '${url}': ${errorDescription}`));
+                    } else {
+                       resolve();
+                    }
+                };
+                const cleanup = () => {
+                    ghostView.webContents.removeListener('did-finish-load', handleFinish);
+                    ghostView.webContents.removeListener('did-fail-load', handleFail);
+                };
 
-      view.webContents.once('did-fail-load', (event, errorCode, errorDescription) => {
-        clearTimeout(timeout);
-        console.log(`Failed to pre-render ${url}: ${errorDescription}`);
-        view.webContents.destroy();
-        completedCount++;
-        if (completedCount === totalSites) {
-          console.log('Background pre-rendering completed.');
-          resolve();
-        } else {
-          preloadNext();
-        }
-      });
+                ghostView.webContents.on('did-finish-load', handleFinish);
+                ghostView.webContents.on('did-fail-load', handleFail);
+                ghostView.webContents.loadURL(url);
+            });
 
-      view.webContents.loadURL(url);
+            await loadPromise;
+            preloadedViews.set(url, ghostView); // Store the fully rendered view
+            console.log(`Finished pre-rendering ${url}`);
+        } catch (error) {
+            console.error(`Failed to pre-render ${url}:`, error);
+        }
+        await delay(500);
     }
-    
-    // 启动有限的并发预加载
-    for (let i = 0; i < Math.min(maxConcurrent, dramaSites.length); i++) {
-      preloadNext();
-    }
-  });
+    console.log('Pre-rendering complete.');
 }
 
 function attachViewEvents(targetView) {
@@ -259,35 +231,23 @@ function updateViewBounds(isVisible = true) {
 function createWindow () {
   mainWindow = new BrowserWindow({
     width: 1415,
-    height: 920,
+    height: 950,
     frame: false,
     titleBarStyle: 'hidden',
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      preload: path.join(__dirname, 'assets', 'js', 'preload-ui.js'),
-      // 优化启动性能
-      backgroundThrottling: false,
-      offscreen: false
+      preload: path.join(__dirname, 'assets', 'js', 'preload-ui.js')
     },
     title: "AudioVisual",
-    icon: path.join(__dirname, 'assets', 'images', 'icon.png'),
-    // 优化窗口显示
-    show: false // 先不显示，等加载完成后再显示
+    icon: path.join(__dirname, 'assets', 'images', 'icon.png')
   });
 
   mainWindow.loadFile('index.html');
-  
-  // 窗口加载完成后再显示，避免白屏
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-  });
-  
-  // 完全禁用开发者工具自动打开
-  // if (isDev) {
-  //   mainWindow.webContents.openDevTools({ mode: 'detach' });
-  // }
-  
+  if (isDev) {
+     // 主窗口开发者工具 - 在新窗口中打开
+     //mainWindow.webContents.openDevTools({ mode: 'detach' });
+  }
   mainWindow.setMenu(null);
 
   view = new BrowserView({
@@ -295,10 +255,7 @@ function createWindow () {
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(__dirname, 'assets', 'js', 'preload-web.js'),
-      plugins: true,
-      // 优化性能
-      backgroundThrottling: false,
-      offscreen: false
+      plugins: true
     }
   });
 
@@ -500,11 +457,7 @@ function createWindow () {
 }
 
 app.whenReady().then(async () => {
-  // 延迟清理存储数据，让窗口先显示
-  setTimeout(async () => {
-    await session.defaultSession.clearStorageData();
-  }, 1000);
-  
+  await session.defaultSession.clearStorageData();
   session.defaultSession.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36');
 
   const filter = { urls: ['*://*/*'] };
@@ -533,23 +486,19 @@ app.whenReady().then(async () => {
     }
   }
 
-  // 立即创建窗口，不等待预加载完成
   createWindow();
   
-  // 将预加载过程移到后台异步执行
+
   if (!cacheIsValid) {
-    console.log('Pre-rendering cache is stale or missing. Starting background pre-rendering.');
-    // 延迟3秒后开始预加载，让用户先看到界面
-    setTimeout(async () => {
-      await session.defaultSession.clearCache();
-      await preloadSites();
-      try {
-        fs.writeFileSync(cacheInfoPath, JSON.stringify({ lastPreloadTimestamp: Date.now() }));
-        console.log('Updated pre-rendering cache timestamp.');
-      } catch (error) {
-        console.error('Error writing cache info file:', error);
-      }
-    }, 3000);
+    console.log('Pre-rendering cache is stale or missing. Clearing cache and re-rendering.');
+    await session.defaultSession.clearCache();
+    await preloadSites();
+    try {
+      fs.writeFileSync(cacheInfoPath, JSON.stringify({ lastPreloadTimestamp: Date.now() }));
+      console.log('Updated pre-rendering cache timestamp.');
+    } catch (error) {
+      console.error('Error writing cache info file:', error);
+    }
   } else {
     console.log('Cache is valid within 24 hours. Skipping pre-rendering to avoid unnecessary navigation.');
     // 缓存有效时不重新预加载，避免不必要的页面导航
