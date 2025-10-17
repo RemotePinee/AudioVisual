@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.5-blue.svg?style=for-the-badge&logo=semantic-release)
+![Version](https://img.shields.io/badge/version-1.0.6-blue.svg?style=for-the-badge&logo=semantic-release)
 ![License](https://img.shields.io/badge/license-UNLICENSED-red.svg?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)
 ![Electron](https://img.shields.io/badge/Electron-20+-47848F.svg?style=for-the-badge&logo=electron)
@@ -136,7 +136,25 @@ npm run dist
 
 ## 📝 更新日志
 
-### v1.0.5 (最新)
+## 🆕 版本更新 (v1.0.6)
+
+### 🔧 修复内容
+- ✅ 修复爱奇艺视频解析失败问题，添加专用解析接口
+- ✅ 修复芒果TV视频解析失败问题，优化解析成功率
+- ✅ 优化应用启动速度，减少白屏时间
+- ✅ 改进缓存机制，提升页面加载性能
+
+### 🚀 新增功能
+- 🆕 添加智能解析识别功能
+- 🆕 优化预渲染逻辑，后台异步加载提升响应速度
+- 🆕 改进错误处理机制
+
+
+### 🎯 逻辑优化
+- 🔄 改进页面加载检测机制，准确判断解析成功状态
+- 🔄 优化用户体验，减少手动切换解析接口的需要
+
+### v1.0.5
 - 🐛 修复窗口最小化后网站内容消失的问题
 - 🔧 优化窗口恢复逻辑，提升用户体验
 - 📦 更新构建配置，支持所有平台使用512x512图标

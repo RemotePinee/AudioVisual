@@ -56,9 +56,16 @@ function populateSelect(selectElement, items) {
 
 function triggerParse() {
     if (isCurrentlyParsing && currentVideoUrl) {
+        // 立即显示加载状态，提升用户体验
+        loadingOverlay.classList.remove('hidden');
+        
         const selectedApiUrl = apiSelect.value;
         const finalUrl = selectedApiUrl + currentVideoUrl;
-        window.voidAPI.embedVideo(finalUrl);
+        
+        // 使用setTimeout确保UI更新后再执行嵌入，避免阻塞
+        setTimeout(() => {
+            window.voidAPI.embedVideo(finalUrl);
+        }, 50);
     }
 }
 
@@ -66,6 +73,7 @@ function parseYoukuUrl() {
     let youkuVideoUrl = youkuUrlInput.value.trim() || currentYoukuUrl;
     if (youkuVideoUrl) {
         currentYoukuUrl = youkuVideoUrl;
+        currentVideoUrl = youkuVideoUrl; // 更新currentVideoUrl确保地址栏显示正确
         const selectedApiUrl = apiSelect.value;
         const finalUrl = selectedApiUrl + youkuVideoUrl;
         urlInput.value = currentYoukuUrl;
@@ -78,8 +86,31 @@ function parseYoukuUrl() {
 }
 
 function navigateTo(url, isPlatformSwitch = false, themeVars = null) {
+    // 立即显示加载图标
     loadingOverlay.classList.remove('hidden');
+    
+    // 添加一个最小显示时间，确保用户能看到加载状态
+    const minLoadingTime = 500; // 500毫秒最小显示时间
+    const startTime = Date.now();
+    
+    // 设置一个标志来跟踪这次导航
+    const navigationId = Date.now() + Math.random();
+    window.currentNavigationId = navigationId;
+    
+    // 开始导航
     window.voidAPI.navigate(url, isPlatformSwitch, themeVars);
+    
+    // 设置一个超时，确保加载图标至少显示最小时间
+    setTimeout(() => {
+        // 只有当前导航ID匹配时才可能隐藏
+        if (window.currentNavigationId === navigationId) {
+            const elapsed = Date.now() - startTime;
+            if (elapsed >= minLoadingTime) {
+                // 如果页面还没有加载完成，继续显示加载图标
+                // onLoadFinished 会在页面真正加载完成时隐藏图标
+            }
+        }
+    }, minLoadingTime);
 }
 
 populateSelect(platformSelect, platforms);
@@ -112,11 +143,17 @@ goButton.addEventListener('click', () => {
 urlInput.addEventListener('keydown', (e) => e.key === 'Enter' && goButton.click());
 
 parseButton.addEventListener('click', () => {
+    // 立即显示加载状态，提升响应速度
+    loadingOverlay.classList.remove('hidden');
+    
     if (platformSelect.value === 'https://www.youku.com') {
         parseYoukuUrl();
     } else {
         isCurrentlyParsing = true;
-        triggerParse();
+        // 使用requestAnimationFrame确保UI更新后再执行解析
+        requestAnimationFrame(() => {
+            triggerParse();
+        });
     }
 });
 
@@ -159,10 +196,53 @@ closeButton.addEventListener('click', () => window.voidAPI.closeWindow());
 window.voidAPI.onUrlUpdate((url) => {
     const isApiUrl = apiList.some(api => url.startsWith(api.value));
     if (isApiUrl) {
-        urlInput.value = currentVideoUrl;
+        // 如果是优酷解析的API URL，显示优酷视频链接
+        if (currentYoukuUrl && url.includes(encodeURIComponent(currentYoukuUrl))) {
+            urlInput.value = currentYoukuUrl;
+        } else {
+            urlInput.value = currentVideoUrl;
+        }
     } else {
+        const previousVideoUrl = currentVideoUrl;
         urlInput.value = url;
         currentVideoUrl = url;
+        
+        // 如果是爱奇艺视频页面且URL发生了变化，自动触发解析
+        if (url.includes('iqiyi.com/v_') && url.includes('.html') && 
+            previousVideoUrl && previousVideoUrl !== url && 
+            platformSelect.value === 'https://www.iqiyi.com') {
+            console.log('iQiyi episode changed, auto-parsing:', url);
+            isCurrentlyParsing = true;
+            triggerParse();
+        }
+        
+        // 如果是腾讯视频页面且URL发生了变化，自动触发解析
+        if (url.includes('v.qq.com/x/cover/') && 
+            previousVideoUrl && previousVideoUrl !== url && 
+            platformSelect.value === 'https://v.qq.com') {
+            console.log('Tencent Video episode changed, auto-parsing:', url);
+            isCurrentlyParsing = true;
+            triggerParse();
+        }
+        
+        // 如果是芒果TV页面且URL发生了变化，自动触发解析
+        if (url.includes('mgtv.com/b/') && 
+            previousVideoUrl && previousVideoUrl !== url && 
+            platformSelect.value === 'https://www.mgtv.com') {
+            console.log('Mango TV episode changed, auto-parsing:', url);
+            isCurrentlyParsing = true;
+            triggerParse();
+        }
+        
+        // 如果是哔哩哔哩番剧页面且URL发生了变化，自动触发解析
+        if ((url.includes('bilibili.com/bangumi/play/') || 
+             url.includes('bilibili.com/video/') && (url.includes('?p=') || url.includes('&p='))) && 
+            previousVideoUrl && previousVideoUrl !== url && 
+            platformSelect.value === 'https://www.bilibili.com') {
+            console.log('Bilibili episode changed, auto-parsing:', url);
+            isCurrentlyParsing = true;
+            triggerParse();
+        }
     }
 });
 
@@ -172,6 +252,8 @@ window.voidAPI.onNavStateUpdate(({ canGoBack, canGoForward }) => {
 });
 
 window.voidAPI.onLoadFinished(() => {
+    // 清除当前导航ID，表示加载完成
+    window.currentNavigationId = null;
     loadingOverlay.classList.add('hidden');
 });
 
@@ -196,7 +278,12 @@ dramaUsageTips.style.display = 'none';
 
 function updateDOMForTheme(isSwitchingToDrama) {
     if (isSwitchingToDrama) {
-        dramaModeButton.textContent = '国内解析';
+        dramaModeButton.innerHTML = `
+            <div class="button-icon" style="display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;">
+                🏠
+            </div>
+            <div class="button-text">国内解析</div>
+        `;
         dramaTheme.disabled = false;
         container.classList.add('drama-mode');
         controlsWrapper.style.display = 'none';
@@ -205,7 +292,12 @@ function updateDOMForTheme(isSwitchingToDrama) {
         dramaUsageTips.style.display = 'block';
         youkuCustomPage.style.display = 'none';
     } else {
-        dramaModeButton.textContent = '美韩日剧';
+        dramaModeButton.innerHTML = `
+            <div class="button-icon" style="display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;">
+                🌍
+            </div>
+            <div class="button-text">美韩日剧</div>
+        `;
         dramaTheme.disabled = true;
         container.classList.remove('drama-mode');
         controlsWrapper.style.display = 'block';

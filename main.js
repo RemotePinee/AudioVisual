@@ -82,60 +82,93 @@ const dramaSites = [
     'https://gaze.run/'
 ];
 
-async function preloadSites() {
-    console.log('Starting pre-rendering of drama sites...');
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-    for (const url of dramaSites) {
-        try {
-            console.log(`Pre-rendering ${url}`);
-            const ghostView = new BrowserView({
-                webPreferences: {
-                    contextIsolation: true,
-                    nodeIntegration: false,
-                    preload: path.join(__dirname, 'assets', 'js', 'preload-web.js'),
-                    plugins: true
-                }
-            });
-
-            const loadPromise = new Promise((resolve, reject) => {
-                const handleFinish = () => {
-                    cleanup();
-                    resolve();
-                };
-                const handleFail = (event, errorCode, errorDescription) => {
-                    cleanup();
-                    if (errorCode !== -3) { // -3 is ABORTED
-                       reject(new Error(`ERR_FAILED (${errorCode}) loading '${url}': ${errorDescription}`));
-                    } else {
-                       resolve();
-                    }
-                };
-                const cleanup = () => {
-                    ghostView.webContents.removeListener('did-finish-load', handleFinish);
-                    ghostView.webContents.removeListener('did-fail-load', handleFail);
-                };
-
-                ghostView.webContents.on('did-finish-load', handleFinish);
-                ghostView.webContents.on('did-fail-load', handleFail);
-                ghostView.webContents.loadURL(url);
-            });
-
-            await loadPromise;
-            preloadedViews.set(url, ghostView); // Store the fully rendered view
-            console.log(`Finished pre-rendering ${url}`);
-        } catch (error) {
-            console.error(`Failed to pre-render ${url}:`, error);
+function preloadSites() {
+  return new Promise((resolve) => {
+    console.log('Starting background pre-rendering of drama sites...');
+    let completedCount = 0;
+    const totalSites = dramaSites.length;
+    
+    // 减少并发数量，避免资源争抢
+    const maxConcurrent = 2;
+    let currentIndex = 0;
+    
+    function preloadNext() {
+      if (currentIndex >= dramaSites.length) {
+        return;
+      }
+      
+      const url = dramaSites[currentIndex++];
+      const view = new BrowserView({
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+          webSecurity: true,
+          allowRunningInsecureContent: false,
+          experimentalFeatures: false,
+          // 减少内存使用
+          backgroundThrottling: true,
+          offscreen: true
         }
-        await delay(500);
+      });
+
+      // 设置较短的超时时间
+      const timeout = setTimeout(() => {
+        console.log(`Pre-rendering timeout for ${url}`);
+        view.webContents.destroy();
+        completedCount++;
+        if (completedCount === totalSites) {
+          console.log('Background pre-rendering completed.');
+          resolve();
+        } else {
+          preloadNext();
+        }
+      }, 8000); // 减少到8秒
+
+      view.webContents.once('did-finish-load', () => {
+        clearTimeout(timeout);
+        console.log(`Successfully pre-rendered: ${url}`);
+        preloadedViews.set(url, view);
+        completedCount++;
+        if (completedCount === totalSites) {
+          console.log('Background pre-rendering completed.');
+          resolve();
+        } else {
+          preloadNext();
+        }
+      });
+
+      view.webContents.once('did-fail-load', (event, errorCode, errorDescription) => {
+        clearTimeout(timeout);
+        console.log(`Failed to pre-render ${url}: ${errorDescription}`);
+        view.webContents.destroy();
+        completedCount++;
+        if (completedCount === totalSites) {
+          console.log('Background pre-rendering completed.');
+          resolve();
+        } else {
+          preloadNext();
+        }
+      });
+
+      view.webContents.loadURL(url);
     }
-    console.log('Pre-rendering complete.');
+    
+    // 启动有限的并发预加载
+    for (let i = 0; i < Math.min(maxConcurrent, dramaSites.length); i++) {
+      preloadNext();
+    }
+  });
 }
 
 function attachViewEvents(targetView) {
   if (!targetView || !targetView.webContents || targetView.webContents.isDestroyed()) {
     return;
   }
+
+  // 内置浏览器开发者工具 - 在开发模式下为BrowserView添加开发者工具
+  //  if (isDev) {
+  //    targetView.webContents.openDevTools({ mode: 'bottom' });
+  //  }
 
   targetView.webContents.on('dom-ready', () => {
     if (targetView && targetView.webContents && !targetView.webContents.isDestroyed()) {
@@ -151,6 +184,32 @@ function attachViewEvents(targetView) {
   targetView.webContents.on('did-start-navigation', (event, url, isInPlace, isMainFrame) => {
     if (isMainFrame && mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('url-updated', url);
+    }
+  });
+
+  // 监听爱奇艺页面的跳转
+  targetView.webContents.on('did-navigate', (event, url) => {
+    console.log('Page navigated to:', url);
+    
+    // 如果从重定向链接跳转到了正确的视频页面，更新地址栏
+    if (url.includes('iqiyi.com/v_') && url.includes('.html')) {
+      console.log('iQiyi redirected to correct video page:', url);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('url-updated', url);
+      }
+    }
+  });
+
+  // 监听页面内导航（如切换集数）
+  targetView.webContents.on('did-navigate-in-page', (event, url) => {
+    console.log('Page navigated in-page to:', url);
+    
+    // 爱奇艺切换集数时也会改变URL，需要更新地址栏
+    if (url.includes('iqiyi.com/v_') && url.includes('.html')) {
+      console.log('iQiyi episode changed to:', url);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('url-updated', url);
+      }
     }
   });
 
@@ -199,23 +258,36 @@ function updateViewBounds(isVisible = true) {
 
 function createWindow () {
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 900,
+    width: 1415,
+    height: 920,
     frame: false,
     titleBarStyle: 'hidden',
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      preload: path.join(__dirname, 'assets', 'js', 'preload-ui.js')
+      preload: path.join(__dirname, 'assets', 'js', 'preload-ui.js'),
+      // 优化启动性能
+      backgroundThrottling: false,
+      offscreen: false
     },
     title: "AudioVisual",
-    icon: path.join(__dirname, 'assets', 'images', 'icon.png')
+    icon: path.join(__dirname, 'assets', 'images', 'icon.png'),
+    // 优化窗口显示
+    show: false // 先不显示，等加载完成后再显示
   });
 
   mainWindow.loadFile('index.html');
-  if (isDev) {
-    // mainWindow.webContents.openDevTools();
-  }
+  
+  // 窗口加载完成后再显示，避免白屏
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
+  
+  // 完全禁用开发者工具自动打开
+  // if (isDev) {
+  //   mainWindow.webContents.openDevTools({ mode: 'detach' });
+  // }
+  
   mainWindow.setMenu(null);
 
   view = new BrowserView({
@@ -223,7 +295,10 @@ function createWindow () {
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(__dirname, 'assets', 'js', 'preload-web.js'),
-      plugins: true
+      plugins: true,
+      // 优化性能
+      backgroundThrottling: false,
+      offscreen: false
     }
   });
 
@@ -248,10 +323,18 @@ function createWindow () {
         currentThemeCss = `:root { ${Object.entries(themeVars).map(([key, value]) => `${key}: ${value}`).join('; ')} }`;
     }
 
-    if (preloadedViews.has(url)) {
-        const newView = preloadedViews.get(url);
-        preloadedViews.delete(url); // Use it only once
+    // 处理爱奇艺重定向链接
+    if (url.includes('iqiyi.com/tvg/to_page_url')) {
+        console.log('Detected iQiyi redirect URL, will monitor for final redirect:', url);
+        // 直接加载重定向链接，但监听页面跳转
+        // 爱奇艺会通过JavaScript跳转到正确的视频页面
+    }
 
+    if (preloadedViews.has(url)) {
+        // 如果是预加载的网站，直接使用缓存的视图，但需要创建副本避免冲突
+        const originalView = preloadedViews.get(url);
+        preloadedViews.delete(url); // 使用后删除，避免重复使用导致冲突
+        
         if (view) {
             mainWindow.removeBrowserView(view);
             if (view.webContents && !view.webContents.isDestroyed()) {
@@ -259,10 +342,20 @@ function createWindow () {
             }
         }
 
-        view = newView;
+        view = originalView;
         mainWindow.setBrowserView(view);
         attachViewEvents(view);
         updateViewBounds(true);
+        
+        // 手动更新地址栏显示
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('url-updated', url);
+        }
+    } else if (dramaSites.includes(url)) {
+        // 如果是drama网站但没有预加载视图，说明缓存有效但视图已被使用，直接加载
+        if (view && view.webContents) {
+            view.webContents.loadURL(url);
+        }
     } else {
         if (view && view.webContents) {
             updateViewBounds(false);
@@ -286,16 +379,53 @@ function createWindow () {
       const script = `
         (() => {
           if (window.voidPlayerInterval) clearInterval(window.voidPlayerInterval);
-          const selectorsToRemove = ['[class*="XPlayer_defaultCover__"]', '.iqp-controller', '.video'];
-          const selectorsToHide = ['video', '.txp_video_container'];
+          
+          // 立即隐藏爱奇艺会员弹窗和遮罩层
+          const vipSelectors = [
+            '#playerPopup', '#vipCoversBox', 'div.iqp-player-vipmask', 
+            'div.iqp-player-paymask', 'div.iqp-player-loginmask', 
+            'div[class^=qy-header-login-pop]', '.covers_cloudCover__ILy8R',
+            '#videoContent > div.loading_loading__vzq4j', '.iqp-player-guide',
+            'div.m-iqyGuide-layer', '.loading_loading__vzq4j'
+            // 移除芒果TV相关的通用选择器，避免误删除重要元素
+          ];
+          vipSelectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach(el => {
+              el.style.display = 'none';
+              el.style.visibility = 'hidden';
+              el.style.opacity = '0';
+              el.style.zIndex = '-9999';
+            });
+          });
+          
+          // 强制移除现有的播放器iframe，确保完全清理
+          const existingIframe = document.getElementById('void-player-iframe');
+          if (existingIframe) {
+            existingIframe.remove();
+            console.log('[VoidPlayer] Removed existing iframe');
+          }
+          
+          const selectorsToRemove = ['[class*="XPlayer_defaultCover__"]', '.iqp-controller'];
+          const selectorsToHide = ['video', '.txp_video_container', '._ControlBar_1fux8_5', '.ControlBar', '[class*="ControlBar"]'];
           window.voidPlayerInterval = setInterval(() => {
             document.querySelectorAll('video').forEach(v => { if (!v.paused) v.pause(); });
             document.querySelectorAll(selectorsToRemove.join(',')).forEach(el => el.remove());
             document.querySelectorAll(selectorsToHide.join(',')).forEach(el => { if (el.style.display !== 'none') el.style.display = 'none'; });
+            
+            // 持续隐藏会员弹窗
+            vipSelectors.forEach(selector => {
+              document.querySelectorAll(selector).forEach(el => {
+                if (el.style.display !== 'none') {
+                  el.style.display = 'none';
+                  el.style.visibility = 'hidden';
+                  el.style.opacity = '0';
+                  el.style.zIndex = '-9999';
+                }
+              });
+            });
           }, 250);
-          const existingIframe = document.getElementById('void-player-iframe');
-          if (existingIframe) existingIframe.remove();
-          const selectors = ['.iqp-player', '#flashbox', '.txp_player_video_wrap', '#bilibili-player', '#player-container', '#player', '.player-container', '.player-view'];
+          
+          const selectors = ['.iqp-player', '#flashbox', '.txp_player_video_wrap', '#bilibili-player', '.mango-layer', '#mgtv-player', '.mgtv-player', '.player-wrap', '#player-container', '#player', '.player-container', '.player-view'];
           let playerContainer = null;
           for (const selector of selectors) {
             playerContainer = document.querySelector(selector);
@@ -303,13 +433,25 @@ function createWindow () {
           }
           if (playerContainer) {
             if (window.getComputedStyle(playerContainer).position === 'static') playerContainer.style.position = 'relative';
+            
+            // 创建新的iframe前再次确保没有旧的iframe
+            const checkExisting = document.getElementById('void-player-iframe');
+            if (checkExisting) checkExisting.remove();
+            
             const iframe = document.createElement('iframe');
             iframe.id = 'void-player-iframe';
             iframe.src = "${url}";
             Object.assign(iframe.style, { position: 'absolute', top: '0', left: '0', width: '100%', height: '100%', border: 'none', zIndex: '9999' });
             iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
             iframe.allowFullscreen = true;
+            
+            // 添加iframe加载事件监听
+            iframe.onload = () => {
+              console.log('[VoidPlayer] New iframe loaded successfully');
+            };
+            
             playerContainer.appendChild(iframe);
+            console.log('[VoidPlayer] Created new iframe with URL:', "${url}");
           } else {
             console.error('[VoidPlayer] Could not find a suitable player container.');
           }
@@ -358,7 +500,11 @@ function createWindow () {
 }
 
 app.whenReady().then(async () => {
-  await session.defaultSession.clearStorageData();
+  // 延迟清理存储数据，让窗口先显示
+  setTimeout(async () => {
+    await session.defaultSession.clearStorageData();
+  }, 1000);
+  
   session.defaultSession.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36');
 
   const filter = { urls: ['*://*/*'] };
@@ -387,21 +533,26 @@ app.whenReady().then(async () => {
     }
   }
 
+  // 立即创建窗口，不等待预加载完成
   createWindow();
   
-
+  // 将预加载过程移到后台异步执行
   if (!cacheIsValid) {
-    console.log('Pre-rendering cache is stale or missing. Clearing cache and re-rendering.');
-    await session.defaultSession.clearCache();
-    await preloadSites();
-    try {
-      fs.writeFileSync(cacheInfoPath, JSON.stringify({ lastPreloadTimestamp: Date.now() }));
-      console.log('Updated pre-rendering cache timestamp.');
-    } catch (error) {
-      console.error('Error writing cache info file:', error);
-    }
+    console.log('Pre-rendering cache is stale or missing. Starting background pre-rendering.');
+    // 延迟3秒后开始预加载，让用户先看到界面
+    setTimeout(async () => {
+      await session.defaultSession.clearCache();
+      await preloadSites();
+      try {
+        fs.writeFileSync(cacheInfoPath, JSON.stringify({ lastPreloadTimestamp: Date.now() }));
+        console.log('Updated pre-rendering cache timestamp.');
+      } catch (error) {
+        console.error('Error writing cache info file:', error);
+      }
+    }, 3000);
   } else {
-    console.log('Skipping pre-rendering as cache is valid.');
+    console.log('Cache is valid within 24 hours. Skipping pre-rendering to avoid unnecessary navigation.');
+    // 缓存有效时不重新预加载，避免不必要的页面导航
   }
 });
 

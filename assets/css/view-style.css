@@ -15,3 +15,9 @@
 ::-webkit-scrollbar-thumb:hover {
     background-color: var(--highlight-color);
 }
+
+/* 隐藏爱奇艺DRM提示弹窗 */
+.notSupportedDrm_drmTipsPopBox__hqd7B,
+.notSupportedDrm_drmTipsPopBoxCover__c-A0d {
+    display: none !important;
+}

@@ -52,10 +52,20 @@ body, html {
     text-align: center;
     color: var(--highlight-color);
     margin-bottom: 40px;
+    margin-top: 15px;
     font-weight: 600;
     font-size: 24px;
     letter-spacing: 1px;
     -webkit-app-region: no-drag; /* Make logo non-draggable */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.logo-icon {
+    color: var(--highlight-color);
+    transition: color 0.3s ease;
 }
 
 .control-group {
@@ -113,6 +123,29 @@ select:focus {
     cursor: pointer;
     border-radius: var(--border-radius);
     transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.button-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+.button-text {
+    flex: 0;
+    text-align: center;
+    white-space: nowrap;
+    writing-mode: horizontal-tb;
 }
 
 .action-button:hover {

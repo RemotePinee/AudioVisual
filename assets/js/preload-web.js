@@ -36,8 +36,43 @@ function applyStyles(cssContent) {
     document.head.prepend(styleElement);
   }
 
-  // 3. 更新样式内容
-  styleElement.textContent = cssContent;
+  // 3. 更新样式内容 - 添加修复导航点击的样式和爱奇艺会员弹窗处理
+  const fixedCssContent = cssContent + `
+    /* 修复腾讯视频和哔哩哔哩导航点击问题 */
+    .site-nav a, .nav-menu a, .header-nav a, .top-nav a, 
+    .navigation a, .navbar a, .menu a, .header-menu a,
+    .bili-header .nav-link, .bili-header .nav-item,
+    .txp_nav a, .txp_header a, .qq-header a {
+      pointer-events: auto !important;
+      cursor: pointer !important;
+    }
+    
+    /* 确保导航容器不阻止点击事件 */
+    .site-nav, .nav-menu, .header-nav, .top-nav, 
+    .navigation, .navbar, .menu, .header-menu,
+    .bili-header, .txp_nav, .txp_header, .qq-header {
+      pointer-events: auto !important;
+    }
+    
+    /* 隐藏爱奇艺会员弹窗和遮罩层 */
+    #playerPopup, 
+    #vipCoversBox, 
+    div.iqp-player-vipmask, 
+    div.iqp-player-paymask,
+    div.iqp-player-loginmask, 
+    div[class^=qy-header-login-pop],
+    .covers_cloudCover__ILy8R,
+    #videoContent > div.loading_loading__vzq4j,
+    .iqp-player-guide,
+    div.m-iqyGuide-layer,
+    .loading_loading__vzq4j {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      z-index: -9999 !important;
+    }
+  `;
+  styleElement.textContent = fixedCssContent;
 }
 
 // --- 事件监听 ---
