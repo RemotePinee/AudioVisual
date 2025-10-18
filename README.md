@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.8-blue.svg?style=for-the-badge&logo=semantic-release)
+![Version](https://img.shields.io/badge/version-1.0.7-blue.svg?style=for-the-badge&logo=semantic-release)
 ![License](https://img.shields.io/badge/license-UNLICENSED-red.svg?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)
 ![Electron](https://img.shields.io/badge/Electron-33+-47848F.svg?style=for-the-badge&logo=electron)
@@ -136,16 +136,12 @@ npm run dist
 
 ## 📝 更新日志
 
-### v1.0.8 (最新)
+### v1.0.7 (最新)
 - 🔧 升级Electron到v33.0.0，支持最新Windows 25H2系统
 - 🛠️ 更新electron-builder到v25.1.8，提升构建稳定性
 - 🐛 修复Windows应用在新版本系统上无法运行的问题
 - 🍎 优化macOS构建配置，支持Intel和Apple Silicon双架构
 - ⚡ 改进构建流程，提升应用兼容性和性能
-
-### v1.0.7
-- 🍎 修复macOS DMG安装包兼容性问题
-- 🔧 添加对Intel (x64) 和 Apple Silicon (arm64) 架构的支持
 
 ### v1.0.6
 - 🐛 修复爱奇艺解析失败问题
