@@ -46,7 +46,12 @@
       "icon": "assets/images/icon-512.png"
     },
     "mac": {
-      "target": "dmg",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
       "icon": "assets/images/icon-512.png",
       "category": "public.app-category.entertainment"
     },
