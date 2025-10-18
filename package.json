@@ -1,6 +1,6 @@
 {
   "name": "audiovisual",
-  "version": "1.0.6",
+  "version": "1.0.8",
   "description": "The key to unlock all streams.",
   "main": "main.js",
   "scripts": {
@@ -17,9 +17,9 @@
   },
   "license": "UNLICENSED",
   "devDependencies": {
-    "electron": "^28.2.0",
-    "electron-builder": "^24.9.1",
-    "electron-reloader": "^1.2.3"
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8",
+    "electron-updater": "^6.6.2"
   },
   "dependencies": {
     "axios": "^1.4.0",
@@ -43,7 +43,11 @@
         "target": "nsis",
         "arch": ["x64"]
       },
-      "icon": "assets/images/icon-512.png"
+      "icon": "assets/images/icon-512.png",
+      "requestedExecutionLevel": "asInvoker",
+      "verifyUpdateCodeSignature": false,
+      "publisherName": "AudioVisual",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "mac": {
       "target": [
