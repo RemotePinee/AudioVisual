@@ -1,54 +1,85 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>AudioVisual</title>
+    <style>
+        /* CRITICAL: Inline background to prevent white flash before CSS load */
+        html,
+        body {
+            background-color: #1e1e2f !important;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .container {
+            background-color: #1e1e2f !important;
+            opacity: 0;
+            /* Hidden until loaded */
+            transition: opacity 0.3s ease-in;
+        }
+
+        .container.loaded {
+            opacity: 1;
+        }
+    </style>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/toastify.min.css">
     <link rel="stylesheet" id="drama-theme" href="assets/css/drama-style.css" disabled>
 </head>
-<body>
+
+<body style="background-color: #1e1e2f;">
     <div class="container">
         <aside class="sidebar">
             <div class="sidebar-scaler">
                 <h1 class="logo">
                     <svg class="logo-icon" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
                     </svg>
                     AudioVisual
                 </h1>
-                <div class="controls-wrapper">
-                   <div class="control-group">
-                       <label for="platform-select">平台导航:</label>
-                       <select id="platform-select"></select>
+                <div class="controls-wrapper parsing-only">
+                    <div class="control-group">
+                        <label for="platform-select">平台导航:</label>
+                        <select id="platform-select"></select>
                     </div>
                     <div class="control-group">
                         <label for="api-select">解析接口:</label>
                         <select id="api-select"></select>
-                   </div>
-                   <button id="parse-button" class="action-button">
-                       <div class="button-icon">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
-                           </svg>
-                       </div>
-                       <div class="button-text">P A R S E !</div>
-                   </button>
+                    </div>
+                    <button id="parse-button" class="action-button">
+                        <div class="button-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="currentColor">
+                                <path
+                                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
+                            </svg>
+                        </div>
+                        <div class="button-text">P A R S E !</div>
+                    </button>
                 </div>
-                <div class="control-group no-drag" style="margin-top: 25px;">
+                <div class="control-group no-drag" style="margin-top: 15px;">
                     <button id="drama-mode-button" class="action-button">
-                        <div class="button-icon" style="display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;">
+                        <div class="button-icon"
+                            style="display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;">
                             🌍
                         </div>
                         <div class="button-text">美韩日剧</div>
                     </button>
                 </div>
-                <div class="drama-controls no-drag">
+                <div class="drama-controls no-drag drama-only">
                     <div class="control-group">
                         <button id="netflix-factory-button" class="action-button">
                             <div class="button-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M5.398 0v.006c3.028 8.556 5.37 15.175 8.348 23.596 2.344.058 4.85.398 4.854.398-2.8-7.924-5.923-16.747-8.487-24zm8.489 0v9.63L18.6 22.951c-.043-7.86-.004-15.913.002-22.95zM5.398 1.05V24c2.873-.12 4.557-.396 4.557-.396 0-8.026-.002-16.064-.002-22.554z"/>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="currentColor">
+                                    <path
+                                        d="M5.398 0v.006c3.028 8.556 5.37 15.175 8.348 23.596 2.344.058 4.85.398 4.854.398-2.8-7.924-5.923-16.747-8.487-24zm8.489 0v9.63L18.6 22.951c-.043-7.86-.004-15.913.002-22.95zM5.398 1.05V24c2.873-.12 4.557-.396 4.557-.396 0-8.026-.002-16.064-.002-22.554z" />
                                 </svg>
                             </div>
                             <div class="button-text">奈飞工厂</div>
@@ -57,8 +88,10 @@
                     <div class="control-group">
                         <button id="7-movie-button" class="action-button">
                             <div class="button-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2h-2z"/>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="currentColor">
+                                    <path
+                                        d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2h-2z" />
                                 </svg>
                             </div>
                             <div class="button-text">七点电影</div>
@@ -68,9 +101,9 @@
                         <button id="kanpian-button" class="action-button">
                             <div class="button-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
-                                    <rect x="2" y="3" width="16" height="14" rx="2" fill="#000000"/>
-                                    <rect x="3" y="4" width="14" height="12" fill="#1a1a1a"/>
-                                    <polygon points="8,7 8,13 13,10" fill="#ffffff"/>
+                                    <rect x="2" y="3" width="16" height="14" rx="2" fill="#000000" />
+                                    <rect x="3" y="4" width="14" height="12" fill="#1a1a1a" />
+                                    <polygon points="8,7 8,13 13,10" fill="#ffffff" />
                                 </svg>
                             </div>
                             <div class="button-text">看片狂人</div>
@@ -80,74 +113,132 @@
                         <button id="gazf-button" class="action-button">
                             <div class="button-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
-                                    <rect x="1" y="3" width="18" height="14" rx="2" fill="#000000" stroke="#333" stroke-width="1"/>
-                                    <rect x="2" y="4" width="16" height="12" fill="#1a1a1a"/>
-                                    <rect x="3" y="5" width="6" height="4" fill="#333"/>
-                                    <rect x="11" y="5" width="6" height="4" fill="#333"/>
-                                    <rect x="3" y="11" width="6" height="4" fill="#333"/>
-                                    <rect x="11" y="11" width="6" height="4" fill="#333"/>
+                                    <rect x="1" y="3" width="18" height="14" rx="2" fill="#000000" stroke="#333"
+                                        stroke-width="1" />
+                                    <rect x="2" y="4" width="16" height="12" fill="#1a1a1a" />
+                                    <rect x="3" y="5" width="6" height="4" fill="#333" />
+                                    <rect x="11" y="5" width="6" height="4" fill="#333" />
+                                    <rect x="3" y="11" width="6" height="4" fill="#333" />
+                                    <rect x="11" y="11" width="6" height="4" fill="#333" />
                                 </svg>
                             </div>
                             <div class="button-text">GAZF</div>
                         </button>
                     </div>
                 </div>
-                <div class="drama-usage-tips no-drag">
-                   <h4>免责声明</h4>
-                   <ul>
-                       <li>软件为开源项目，如您是花钱购买请向购买平台投诉，一切损失与开发者无关，项目内所有资源均来源于互联网，本项目只做整合，如侵犯您的权益请联系邮箱删除！！</li>
-                       <li><strong>Email：</strong><a href="mailto:fenghaoran60@gmail.com">fenghaoran60@gmail.com</a></li>
-                   </ul>
+                <div class="drama-usage-tips no-drag drama-only">
+                    <h4>免责声明</h4>
+                    <ul>
+                        <li>软件为开源项目，如您是花钱购买请向购买平台投诉，一切损失与开发者无关，项目内所有资源均来源于互联网，本项目只做整合，如侵犯您的权益请联系邮箱删除！！</li>
+                        <li><strong>Email：</strong><a href="mailto:fenghaoran60@gmail.com">fenghaoran60@gmail.com</a>
+                        </li>
+                    </ul>
                 </div>
-                <div class="usage-tips">
-                   <h4>使用提示</h4>
-                   <ul>
-                       <li><strong>解析失败:</strong> 请尝试更换上方的解析接口，或检查视频链接是否正确。</li>
-                       <li><strong>广告:</strong> 部分解析接口可能会有广告，请耐心等待或更换接口。</li>
-                       <li><strong>安全:</strong> 请勿在视频播放页面输入任何个人敏感信息。</li>
-                   </ul>
+                <div class="usage-tips parsing-only">
+                    <h4>使用提示</h4>
+                    <ul>
+                        <li><strong>解析失败:</strong> 请尝试更换上方的解析接口，或检查视频链接是否正确。</li>
+                        <li><strong>广告:</strong> 部分解析接口可能会有广告，请耐心等待或更换接口。</li>
+                        <li><strong>安全:</strong> 请勿在视频播放页面输入任何个人敏感信息。</li>
+                    </ul>
                 </div>
                 <div class="footer">
                     <div id="update-notification-area" style="margin-bottom: 10px; min-height: 20px;"></div>
-                    <div id="update-toast-container" style="margin-bottom: 10px;">
-                        <button id="check-update-button" class="action-button">检查更新</button>
+                    <div id="update-toast-container" style="margin-bottom: 10px; display: flex; gap: 5px;">
+                        <button id="check-update-button" class="action-button" style="flex: 1;">检查更新</button>
                     </div>
                     <a href="https://github.com/RemotePinee/AudioVisual" target="_blank">GitHub Repository</a>
                     <div id="toast-container"></div>
                 </div>
             </div>
         </aside>
-        
+
         <main class="main-content">
             <div class="top-bar">
                 <div class="browser-controls">
-                    <button id="back-button" class="nav-button" disabled title="后退">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    <button id="sidebar-toggle-button" class="nav-button" data-tooltip="切换侧边栏">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="9" y1="3" x2="9" y2="21"></line>
+                        </svg>
                     </button>
-                    <button id="forward-button" class="nav-button" disabled title="前进">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    <button id="back-button" class="nav-button" disabled data-tooltip="后退">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
                     </button>
-                    <button id="home-button" class="nav-button" title="首页">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12.5l9-9 9 9"></path><path d="M4.5 10.5v9a2 2 0 002 2h11a2 2 0 002-2v-9"></path></svg>
+                    <button id="forward-button" class="nav-button" disabled data-tooltip="前进">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+                    <button id="home-button" class="nav-button" data-tooltip="首页">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2.5 12.5l9-9 9 9"></path>
+                            <path d="M4.5 10.5v9a2 2 0 002 2h11a2 2 0 002-2v-9"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="quick-access-area">
+                    <!-- Parsing Controls -->
+                    <select id="quick-platform-select" class="compact-select parsing-only"></select>
+                    <select id="quick-api-select" class="compact-select parsing-only"></select>
+                    <button id="quick-parse-button" class="compact-action-button parsing-only" data-tooltip="立即解析">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </button>
+                    <!-- Drama Controls -->
+                    <select id="quick-drama-select" class="compact-select drama-only"></select>
+                    <!-- Universal Mode Toggle -->
+                    <button id="quick-mode-toggle" class="compact-action-button" data-tooltip="切换模式">
+                        <span class="mode-icon">🌍</span>
                     </button>
                 </div>
                 <input type="text" id="url-input" placeholder="将视频链接粘贴于此...">
-                <button id="go-button">Go</button>
+                <button id="go-button" class="toolbar-action-btn">Go</button>
+                <button id="settings-button" class="toolbar-action-btn" data-tooltip="系统设置">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                </button>
                 <div class="window-controls">
-                    <button id="minimize-button" class="window-control-button" title="最小化">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <button id="minimize-button" class="window-control-button" data-tooltip="最小化">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
                     </button>
-                    <button id="maximize-button" class="window-control-button" title="最大化">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                    <button id="maximize-button" class="window-control-button" data-tooltip="最大化">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        </svg>
                     </button>
-                    <button id="close-button" class="window-control-button" title="关闭">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <button id="close-button" class="window-control-button" data-tooltip="关闭">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
                     </button>
                 </div>
             </div>
-            <div id="youku-custom-page" style="display: none;">
+            <div id="youku-custom-page" class="parsing-only" style="display: none;">
                 <div class="icon-container">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path>
                         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path>
                     </svg>
@@ -160,17 +251,174 @@
                     <ul>
                         <li>1. 在上方输入框中粘贴优酷视频的链接。</li>
                         <li>2. 在左侧选择一个解析接口。</li>
-                        <li>3. 点击上方的 "P A R S E !" 按钮开始播放。</li>
+                        <li>3. 点击 "P A R S E !" 按钮开始播放。</li>
                         <li>4. 如需更换接口，在左侧重新选择后再次点击 "P A R S E !" 即可。</li>
                     </ul>
                 </div>
             </div>
+
+            <!-- Reconstructed Settings Dashboard (Premium sidebar layout) -->
+            <div id="settings-page" style="display: none;">
+                <div class="settings-dashboard">
+                    <!-- Left Sidebar -->
+                    <aside class="settings-sidebar">
+                        <div class="settings-sidebar-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path
+                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                                </path>
+                            </svg>
+                            <span>系统设置</span>
+                        </div>
+                        <nav class="settings-nav">
+                            <button class="nav-item tab-button active" data-tab="parsing-tab">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                                解析接口管理
+                            </button>
+                            <button class="nav-item tab-button" data-tab="drama-tab">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path>
+                                </svg>
+                                影视导航管理
+                            </button>
+                            <button class="nav-item tab-button" data-tab="appearance-tab">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M12 2v20"></path>
+                                    <path d="M12 12h10"></path>
+                                </svg>
+                                界面偏好 (开发中)
+                            </button>
+                        </nav>
+
+                    </aside>
+
+                    <!-- Main Content Panel -->
+                    <main class="settings-main">
+                        <header class="settings-main-header">
+                            <div class="header-left">
+                                <h1 id="settings-current-tab-title">解析接口管理</h1>
+                                <p id="settings-current-tab-desc">配置自定义解析引擎，支持快速切换与负载均衡</p>
+                            </div>
+                            <div class="header-right">
+                                <button id="close-settings" class="close-page-button">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                    退出设置
+                                </button>
+                            </div>
+                        </header>
+
+                        <div class="settings-content-scroll">
+                            <div id="parsing-tab" class="tab-content active">
+                                <div class="config-editor-wrapper">
+                                    <div class="editor-header">
+                                        <div class="editor-title">Editor / Config.json</div>
+                                        <div class="editor-actions">Lines: <span id="parsing-line-count">0</span></div>
+                                    </div>
+                                    <textarea id="parsing-list-input" spellcheck="false"
+                                        placeholder="名称|接口地址"></textarea>
+                                </div>
+                                <div class="settings-info-card">
+                                    <h3>💡 使用技巧</h3>
+                                    <p>每行输入一个接口，格式为：<strong>名称|接口URL</strong>。例如：<code>Default|https://example.com/jx?url=</code>。保存后将在左侧栏立即生效。
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div id="drama-tab" class="tab-content">
+                                <div class="config-editor-wrapper">
+                                    <div class="editor-header">
+                                        <div class="editor-title">Editor / Sites.json</div>
+                                        <div class="editor-actions">Lines: <span id="drama-line-count">0</span></div>
+                                    </div>
+                                    <textarea id="drama-list-input" spellcheck="false" placeholder="名称|网站地址"></textarea>
+                                </div>
+                                <div class="settings-info-card">
+                                    <h3>🚀 导航配置</h3>
+                                    <p>自定义影视导航站点。点击侧边栏的“美韩日剧”按钮可快速访问这些站点。</p>
+                                </div>
+                            </div>
+
+                            <div id="appearance-tab" class="tab-content">
+                                <div class="empty-state">
+                                    <div class="empty-icon">🚧</div>
+                                    <h3>功能开发中</h3>
+                                    <p>界面偏好设置将在下个版本开放，敬请期待。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <footer class="settings-main-footer">
+                            <div style="flex: 1;"></div>
+                            <button id="cancel-settings" class="secondary-button">恢复默认设置</button>
+                            <button id="save-settings" class="action-button">应用并保存</button>
+                        </footer>
+                    </main>
+                </div>
+            </div>
+
         </main>
     </div>
     <div id="loading-overlay" class="hidden">
         <div class="spinner"></div>
     </div>
+    <script>
+        // Deep integration handshake: Ensure dark theme is visible before showing window
+        window.addEventListener('load', () => {
+            const container = document.querySelector('.container');
+            // Wait for next frames to allow painting
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    if (container) container.classList.add('loaded');
+                    // Final safety delay before signaling main process
+                    setTimeout(() => {
+                        window.voidAPI.showWindow();
+                    }, 50);
+                });
+            });
+        });
+    </script>
     <script src="./assets/js/toastify.min.js"></script>
     <script src="./assets/js/renderer.js"></script>
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner"></div>
+    </div>
+    <div id="custom-confirm-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <h3 id="modal-title">提示信息</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-cancel" class="modal-button secondary">取消</button>
+                <button id="modal-confirm" class="modal-button primary">确定</button>
+            </div>
+        </div>
+    </div>
 </body>
+
 </html>

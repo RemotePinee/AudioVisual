@@ -4,16 +4,16 @@
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--primary-bg);
+    background: var(--av-primary-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: var(--accent-color);
+    background-color: var(--av-accent-color);
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--highlight-color);
+    background-color: var(--av-highlight-color);
 }
 
 /* 隐藏爱奇艺DRM提示弹窗 */

@@ -15,14 +15,20 @@ contextBridge.exposeInMainWorld('voidAPI', {
   onUrlUpdate: (callback) => ipcRenderer.on('url-updated', (event, ...args) => callback(...args)),
 
   onNavStateUpdate: (callback) => ipcRenderer.on('nav-state-updated', (event, ...args) => callback(...args)),
-  
+
   // Channel for the main process to notify when content is ready
   onLoadFinished: (callback) => ipcRenderer.on('load-finished', () => callback()),
+
+  // Used to sync sidebar state on startup from memory
+  onInitSidebarState: (callback) => ipcRenderer.on('init-sidebar-state', (event, ...args) => callback(...args)),
+
+  // Proactive parse bridge
+  onFastParseUrl: (callback) => ipcRenderer.on('fast-parse-url', (event, ...args) => callback(...args)),
 
   minimizeWindow: () => ipcRenderer.send('minimize-window'),
   maximizeWindow: () => ipcRenderer.send('maximize-window'),
   openExternalLink: (url) => ipcRenderer.send('open-external-link', url),
-  
+
   checkForUpdates: () => ipcRenderer.send('check-for-updates'),
   downloadUpdate: () => ipcRenderer.send('download-update'),
   quitAndInstall: () => ipcRenderer.send('quit-and-install'),
@@ -32,6 +38,6 @@ contextBridge.exposeInMainWorld('voidAPI', {
   onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', (event, ...args) => callback(...args)),
   onUpdateError: (callback) => ipcRenderer.on('update-error', (event, ...args) => callback(...args)),
   closeWindow: () => ipcRenderer.send('close-window'),
-  
-  
+  toggleSidebar: (isCollapsed) => ipcRenderer.send('sidebar-toggle', isCollapsed),
+  showWindow: () => ipcRenderer.send('show-window'),
 });

@@ -1,6 +1,6 @@
 {
   "name": "audiovisual",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "The key to unlock all streams.",
   "main": "main.js",
   "scripts": {
@@ -41,7 +41,9 @@
     "win": {
       "target": {
         "target": "nsis",
-        "arch": ["x64"]
+        "arch": [
+          "x64"
+        ]
       },
       "icon": "assets/images/icon-512.png",
       "requestedExecutionLevel": "asInvoker",
@@ -53,7 +55,10 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "icon": "assets/images/icon-512.png",
@@ -63,7 +68,9 @@
       "target": [
         {
           "target": "deb",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/images/icon-512.png",
