@@ -6,7 +6,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.8-blue.svg?style=for-the-badge&logo=semantic-release)
+![Version](https://img.shields.io/badge/version-1.0.9-blue.svg?style=for-the-badge&logo=semantic-release)
 ![License](https://img.shields.io/badge/license-UNLICENSED-red.svg?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)
 ![Electron](https://img.shields.io/badge/Electron-33+-47848F.svg?style=for-the-badge&logo=electron)
@@ -140,7 +140,13 @@ npm run dist
 
 ## 📝 更新日志
 
-### v1.0.8 (最新)
+### v1.0.9 (最新)
+- ✨ **Premium 视觉重构**：引入全新自定义 Tooltip 与毛玻璃质感 Modal，彻底告别原生 UI
+- 🚀 **核心稳定性修复**：解决 `MutationObserver` 死循环导致的启动卡死（重要）
+- 📐 **侧边栏布局优化**：引入宽度补偿机制，完美适配各种缩放比例
+- 🔄 **同步逻辑修复**：解决模式切换时地址栏 URL 与站点不同步的问题
+
+### v1.0.8
 - 🐛 修复爱奇艺黑屏问题
 - ✨ 添加窗口自适应
 
