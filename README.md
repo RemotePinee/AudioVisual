@@ -202,8 +202,6 @@ npm run dist
 
 ---
 
-<div align="center">
-
 ## 📈 Star History
 
 <a href="https://www.star-history.com/?repos=RemotePinee%2FAudioVisual&type=date&legend=top-left">
@@ -214,6 +212,7 @@ npm run dist
   </picture>
 </a>
 
+<div align="center">
 
 **⭐ 如果觉得项目不错，请给个Star支持一下！**
 
