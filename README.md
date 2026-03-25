@@ -179,9 +179,19 @@ npm run dist
 - 🔧 修复IPC通信问题
 - 📱 增加窗口高度
 - 🎨 调整通知位置
+---
 
+## Star History
 
+<a href="https://www.star-history.com/?repos=RemotePinee%2FAudioVisual&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=RemotePinee/AudioVisual&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=RemotePinee/AudioVisual&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=RemotePinee/AudioVisual&type=date&legend=top-left" />
+ </picture>
+</a>
 
+---
 
 
 ## ☕ 赞赏支持
