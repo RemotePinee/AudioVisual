@@ -196,14 +196,7 @@ npm run dist
 
 ---
 
-## 📄 许可证
-
-本项目采用 UNLICENSED 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
-
----
-
 ## 📈 Star History
-
 <a href="https://www.star-history.com/?repos=RemotePinee%2FAudioVisual&type=date&legend=top-left">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=RemotePinee/AudioVisual&type=date&theme=dark&legend=top-left" />
@@ -211,6 +204,12 @@ npm run dist
     <img alt="Star History Chart" src="https://api.star-history.com/image?repos=RemotePinee/AudioVisual&type=date&legend=top-left" />
   </picture>
 </a>
+
+## 📄 许可证
+
+本项目采用 UNLICENSED 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+
+---
 
 <div align="center">
 
