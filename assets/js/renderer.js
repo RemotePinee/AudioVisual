@@ -736,16 +736,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     checkUpdateButton.addEventListener('click', () => {
-        showUpdateNotification("正在检查更新...", 'info', false);
+        checkUpdateButton.disabled = true;
+        checkUpdateButton.textContent = '检查中...';
         window.voidAPI.checkForUpdates();
     });
 
+    // 新增：处理开始检查更新的事件
+    window.voidAPI.onUpdateChecking(() => {
+        console.log('[Renderer] Checking for updates...');
+        showUpdateNotification("正在检查更新...", 'info', true);
+    });
+
     window.voidAPI.onUpdateAvailable((info) => {
-        showUpdateNotification(`发现新版本 ${info.version}。点击此处开始下载。`, 'available', true);
+        console.log('[Renderer] Update available:', info.version);
+        checkUpdateButton.disabled = false;
+        checkUpdateButton.textContent = '检查更新';
+        showUpdateNotification(`🎉 发现新版本 ${info.version}！点击此处开始下载。`, 'available', true);
         const notificationDiv = updateNotificationArea.querySelector('div');
         notificationDiv.style.cursor = 'pointer';
         notificationDiv.onclick = function () {
-            showUpdateNotification("正在下载更新...", 'info', true);
+            showUpdateNotification("⏬ 正在下载更新...", 'info', true);
             window.voidAPI.downloadUpdate();
             const newDiv = updateNotificationArea.querySelector('div');
             if (newDiv) {
@@ -756,18 +766,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.voidAPI.onUpdateNotAvailable(() => {
-        showUpdateNotification("已是最新版本", 'info', false);
+        console.log('[Renderer] Already on latest version');
+        checkUpdateButton.disabled = false;
+        checkUpdateButton.textContent = '检查更新';
+        showUpdateNotification("✅ 已是最新版本", 'success', false);
     });
 
     window.voidAPI.onUpdateDownloadProgress((progressObj) => {
         const percent = Math.floor(progressObj.percent);
-        checkUpdateButton.textContent = `下载中... ${percent}%`;
-        showUpdateNotification(`下载进度: ${percent}% (${Math.floor(progressObj.transferred / 1024 / 1024)}MB / ${Math.floor(progressObj.total / 1024 / 1024)}MB)`, 'info', true);
+        const downloaded = Math.floor(progressObj.transferred / 1024 / 1024);
+        const total = Math.floor(progressObj.total / 1024 / 1024);
+        checkUpdateButton.textContent = `下载中 ${percent}%`;
+        showUpdateNotification(`⏬ 下载进度: ${percent}% (${downloaded}MB / ${total}MB)`, 'info', true);
     });
 
     window.voidAPI.onUpdateDownloaded(() => {
+        console.log('[Renderer] Update downloaded');
+        checkUpdateButton.disabled = false;
         checkUpdateButton.textContent = '检查更新';
-        showUpdateNotification("更新已下载。点击此处重启以应用。", 'success', true);
+        showUpdateNotification("✅ 更新已下载完成！点击此处重启以应用。", 'success', true);
         const notificationDiv = updateNotificationArea.querySelector('div');
         notificationDiv.style.cursor = 'pointer';
         notificationDiv.onclick = function () {
@@ -776,7 +793,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.voidAPI.onUpdateError((err) => {
-        showUpdateNotification(`更新出错: ${err.message}`, 'error', false);
+        console.error('[Renderer] Update error:', err);
+        checkUpdateButton.disabled = false;
+        checkUpdateButton.textContent = '检查更新';
+        
+        // 提供更友好的错误信息
+        let errorMsg = '更新检查失败';
+        if (err && err.message) {
+            if (err.code === 'TIMEOUT') {
+                errorMsg = '⚠️ 检查更新超时，请检查网络连接后重试';
+            } else if (err.message.includes('ENOTFOUND') || err.message.includes('ETIMEDOUT')) {
+                errorMsg = '⚠️ 网络连接失败，请检查网络后重试';
+            } else if (err.message.includes('404')) {
+                errorMsg = '⚠️ 未找到更新文件，请稍后重试';
+            } else {
+                errorMsg = `⚠️ ${err.message}`;
+            }
+        }
+        showUpdateNotification(errorMsg, 'error', false);
+    });
+
+    // 处理开发模式提示
+    window.voidAPI.onUpdateDevMode((info) => {
+        console.log('[Renderer] Update check in dev mode:', info);
+        checkUpdateButton.disabled = false;
+        checkUpdateButton.textContent = '检查更新';
+        showUpdateNotification(`ℹ️ ${info.message}\n当前版本：v${info.version}`, 'info', false);
     });
 
     // --- Sidebar Auto-Scaling Logic ---

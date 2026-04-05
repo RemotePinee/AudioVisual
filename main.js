@@ -626,6 +626,9 @@ app.whenReady().then(async () => {
 
   // Unconditionally preload sites on startup, regardless of session cache validity
   await preloadSites();
+
+  // Initialize auto updater after window is ready
+  initializeAutoUpdater();
 });
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
@@ -648,30 +651,164 @@ ipcMain.on('quit-and-install', () => {
 // --- Auto Updater ---
 const { autoUpdater } = require('electron-updater');
 
-function checkUpdate() {
-  // if (isDev) {
-  //   autoUpdater.forceDevUpdateConfig = true;
-  // }
+// 检测是否为开发模式（应用未打包）
+const isAppPacked = app.isPackaged;
 
-  autoUpdater.on('update-available', (info) => {
-    mainWindow.webContents.send('update-available', info);
+// 配置 autoUpdater
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = false;
+
+// 添加日志以便调试（如果 electron-log 可用）
+try {
+  autoUpdater.logger = require('electron-log');
+  autoUpdater.logger.transports.file.level = 'info';
+} catch (e) {
+  // electron-log 不可用，使用 console
+  autoUpdater.logger = console;
+}
+
+let isUpdaterInitialized = false;
+let updateCheckTimeout = null;
+
+function initializeAutoUpdater() {
+  if (isUpdaterInitialized) {
+    return;
+  }
+
+  console.log('[AutoUpdater] Initializing auto updater...');
+  console.log('[AutoUpdater] Current version:', app.getVersion());
+  console.log('[AutoUpdater] Update feed URL:', `https://github.com/${autoUpdater.getFeedURL?.() || 'RemotePinee/AudioVisual'}`);
+
+  autoUpdater.on('checking-for-update', () => {
+    console.log('[AutoUpdater] Checking for updates...');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-checking');
+    }
   });
 
-  autoUpdater.on('update-not-available', () => {
-    mainWindow.webContents.send('update-not-available');
+  autoUpdater.on('update-available', (info) => {
+    console.log('[AutoUpdater] Update available:', info.version);
+    if (updateCheckTimeout) {
+      clearTimeout(updateCheckTimeout);
+      updateCheckTimeout = null;
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-available', info);
+    }
+  });
+
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('[AutoUpdater] Update not available. Current version:', info.version);
+    if (updateCheckTimeout) {
+      clearTimeout(updateCheckTimeout);
+      updateCheckTimeout = null;
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-not-available');
+    }
   });
 
   autoUpdater.on('download-progress', (progressObj) => {
-    mainWindow.webContents.send('update-download-progress', progressObj);
+    const logMessage = `Downloaded ${Math.floor(progressObj.percent)}% (${Math.floor(progressObj.transferred / 1024 / 1024)}MB / ${Math.floor(progressObj.total / 1024 / 1024)}MB)`;
+    console.log('[AutoUpdater]', logMessage);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-download-progress', progressObj);
+    }
   });
 
-  autoUpdater.on('update-downloaded', () => {
-    mainWindow.webContents.send('update-downloaded');
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('[AutoUpdater] Update downloaded:', info.version);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-downloaded');
+    }
   });
 
   autoUpdater.on('error', (err) => {
-    mainWindow.webContents.send('update-error', err);
+    console.error('[AutoUpdater] Error:', err);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      // 提供更友好的错误信息
+      const errorMessage = err.message || err.toString();
+      mainWindow.webContents.send('update-error', {
+        message: errorMessage,
+        code: err.code,
+        stack: err.stack
+      });
+    }
   });
 
-  autoUpdater.checkForUpdates();
+  isUpdaterInitialized = true;
+  console.log('[AutoUpdater] Initialization complete.');
+}
+
+function checkUpdate() {
+  if (!isUpdaterInitialized) {
+    initializeAutoUpdater();
+  }
+
+  // 清除之前的超时定时器
+  if (updateCheckTimeout) {
+    clearTimeout(updateCheckTimeout);
+    updateCheckTimeout = null;
+  }
+
+  console.log('[AutoUpdater] Manually checking for updates...');
+  console.log('[AutoUpdater] App is packed:', isAppPacked);
+
+  // 开发模式下的特殊处理
+  if (!isAppPacked) {
+    console.log('[AutoUpdater] Running in development mode, update check is disabled.');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      // 延迟一下让用户看到"检查中"状态
+      setTimeout(() => {
+        mainWindow.webContents.send('update-dev-mode', {
+          message: '开发模式下无法检查更新。\n请使用打包后的应用程序进行更新检查。',
+          version: app.getVersion()
+        });
+      }, 500);
+    }
+    return;
+  }
+
+  // 设置30秒超时，防止一直卡住
+  updateCheckTimeout = setTimeout(() => {
+    console.error('[AutoUpdater] Check timeout after 30 seconds');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-error', {
+        message: '检查更新超时，请检查网络连接或稍后重试。',
+        code: 'TIMEOUT'
+      });
+    }
+  }, 30000);
+  
+  try {
+    autoUpdater.checkForUpdates()
+      .then(result => {
+        console.log('[AutoUpdater] Check result:', result);
+      })
+      .catch(err => {
+        console.error('[AutoUpdater] Check failed:', err);
+        if (updateCheckTimeout) {
+          clearTimeout(updateCheckTimeout);
+          updateCheckTimeout = null;
+        }
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('update-error', {
+            message: err.message || '检查更新失败，请检查网络连接或稍后重试。',
+            code: err.code
+          });
+        }
+      });
+  } catch (err) {
+    console.error('[AutoUpdater] Check failed (sync error):', err);
+    if (updateCheckTimeout) {
+      clearTimeout(updateCheckTimeout);
+      updateCheckTimeout = null;
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-error', {
+        message: err.message || '检查更新失败，请检查网络连接或稍后重试。',
+        code: err.code
+      });
+    }
+  }
 }
