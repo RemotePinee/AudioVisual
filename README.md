@@ -193,19 +193,6 @@ npm run dist
 
 ---
 
-
-## ☕ 赞赏支持
-
-如果这个项目对你有帮助，可以请我喝杯咖啡！
-
-<div align="center">
-  <img src="assets/images/zf.jpg" alt="赞赏码" width="300" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-  
-  *扫码支持开发者* ❤️
-</div>
-
----
-
 ## 📄 许可证
 
 本项目采用 UNLICENSED 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
